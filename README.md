@@ -1,5 +1,5 @@
-# multiagent-taskassignment
-Conflict Based Search for Multi Agent Path Planning and Optimal Task Assignment
+# Conflict Based Search for Multi Agent Path Planning and Optimal Task Assignment
+
 
 Implementation of the following paper:
 
