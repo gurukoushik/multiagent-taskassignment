@@ -67,15 +67,15 @@ static void planner(
     vector<Point> goals;
     for(int i=0; i<numofgoals; i++){
 
-        Point goal; // in terms of x and y indices
-        // how to calc x and y indices? - Guru pls help
+        Point goal(goalpos[i], goalpos[i+numofgoals]); // in terms of x and y positions
+        // Guru pls check ^
         goals.push_back(goal);
     }
 
     //Define gridmap for Dijkstra expansions
     State_map state_init_map(numofgoals);
     vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
-    backDijkstras(gridmap, goals, map, x_size, y_size);
+    backDijkstra(gridmap, goals, map, x_size, y_size);
 
 
     // Rest of the stuff goes here

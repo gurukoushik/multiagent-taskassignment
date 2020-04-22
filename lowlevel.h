@@ -1,5 +1,11 @@
 #include <iostream>
+#include <math.h>
 #include <limits>
+#include <algorithm>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace std;
 
@@ -29,14 +35,16 @@ public:
 	void setPoint(Point positionIn){position = positionIn;}
 	void setX(int x_posIn){position.x_pos = x_posIn;}
 	void setY(int y_posIn){position.y_pos = y_posIn;}
-	void setH(double h_valIn){h_vals.push_back(h_valsIn);}
+	void setH(double h_valIn){h_vals.push_back(h_valIn);}
 	void expand(){expanded = true;}
+	void contract(){expanded=false;}
 };
 
 
 
 //// low-level specific definitions //////
-void backDijkstra();
+void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& goals, double*map, 
+	int x_size, int y_size);
 
 void unconstrainedSearch();
 
