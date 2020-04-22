@@ -13,6 +13,7 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include "lowlevel.h"
 
 using namespace std;
 
@@ -62,9 +63,19 @@ static void planner(
         double* action_ptr
         )
 {   
+    //Define starts and goals
+    vector<Point> goals;
+    for(int i=0; i<numofgoals; i++){
+
+        Point goal; // in terms of x and y indices
+        // how to calc x and y indices? - Guru pls help
+        goals.push_back(goal);
+    }
+
     //Define gridmap for Dijkstra expansions
-    vector< vector<State_map> > gridmap;
-    
+    State_map state_init_map(numofgoals);
+    vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
+    backDijkstras(gridmap, goals, map, x_size, y_size);
 
 
     // Rest of the stuff goes here
