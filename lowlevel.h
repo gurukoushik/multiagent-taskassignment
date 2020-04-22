@@ -17,17 +17,20 @@ class State_map{
 
 private:
 	Point position;
-	vector<double> h_val;
+	vector<double> h_vals;
+	bool expanded;
 
 public:
 	State_map(int numofgoalsIn);
 
 	Point getPoint() const {return position;}
-	vector<double> getH() const {return h_val;}
+	vector<double> getH() const {return h_vals;}
+	bool isExpanded() const {return expanded;}
 	void setPoint(Point positionIn){position = positionIn;}
 	void setX(int x_posIn){position.x_pos = x_posIn;}
 	void setY(int y_posIn){position.y_pos = y_posIn;}
-	void setH(double* h_valIn){h_val = h_valIn;}
+	void setH(double h_valIn){h_vals.push_back(h_valsIn);}
+	void expand(){expanded = true;}
 };
 
 
