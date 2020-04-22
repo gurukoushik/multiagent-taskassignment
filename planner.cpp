@@ -62,6 +62,13 @@ static void planner(
         double* action_ptr
         )
 {   
+    //Define gridmap for Dijkstra expansions
+    vector< vector<State_map> > gridmap;
+    
+
+
+    // Rest of the stuff goes here
+
     for(int i=0; i<numofagents; i++)
     {
         action_ptr[i] = robotpos[i] - 1;
