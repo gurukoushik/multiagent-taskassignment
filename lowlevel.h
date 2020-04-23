@@ -82,3 +82,16 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 void constrainedSearch();
 
 #endif
+
+
+// junk
+vector<vector<int> > temp;
+for(int i=0; i<numofagents; i++){
+
+	vector<int> tempTemp;
+	for(int j=0; j<numofgoals;j++){
+
+		tempTemp.push_back( gridmap[robotPosns[i].y_pos - 1][robotPosns[i].x_pos - 1].getH()[j] );
+	}
+	temp.push_back(tempTemp);
+}
