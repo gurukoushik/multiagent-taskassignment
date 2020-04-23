@@ -2,9 +2,11 @@
 
 #define PARAMS_H
 
+#define DIRS 9
+
 extern double PI; 
-extern const int numOfDirs = 9;
-extern int dX[numOfDirs];
-extern int dY[numOfDirs];
+extern int numOfDirs;
+extern int dX[DIRS];
+extern int dY[DIRS];
 
 #endif
