@@ -14,12 +14,11 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "lowlevel.h"
-<<<<<<< Updated upstream
+
 #include "param.h"
 
-=======
-#include "param.h""
->>>>>>> Stashed changes
+
+
 using namespace std;
 
 /* Input Arguments */
