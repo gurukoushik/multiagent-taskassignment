@@ -23,6 +23,10 @@ struct Point{
 	int x_pos, y_pos;
 	Point(){}
 	Point(int xIn, int yIn): x_pos(xIn), y_pos(yIn){}
+	bool operator==(const Point& s) const
+    {
+        return (x == s.x && y == s.y);
+    }
 };
 
 // defines a point on the gridmap
