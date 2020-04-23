@@ -86,7 +86,54 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 }
 
 
-vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, vector<Point> robotPoses){
+vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn, 
+	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size){
 
-	
+	vector<Path> outPaths;	
+
+	for(int i=0; i<robotPosnsIn.size(); i++){
+
+		int goalIdx = assignment[i];
+		if(goalIdx>=goalsIn.size()){
+			printf("goalidx is greater than no of goals\n");
+			continue;
+		}
+
+		stack<State_map> optPath;
+		Path tempPath;
+
+		printf("\n before pushing to optPath \n");
+
+		optPath.push( gridmapIn[robotPosnsIn[i].y_pos-1][robotPosnsIn[i].x_pos-1] );
+		tempPath.pathVect.push_back(gridmapIn[robotPosnsIn[i].y_pos-1][robotPosnsIn[i].x_pos-1].getPoint());
+
+		printf("\n before entering while loop \n");
+
+		while( !optPath.empty() && !(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos-1][goalsIn[goalIdx].x_pos-1].getPoint()) ){
+
+			double min_H = numeric_limits<double>::infinity(); 
+			int finX, finY;
+
+			for(int dir1 = 0; dir1 < numOfDirs; dir1++){
+
+		        int newx = optPath.top().getPoint().x_pos + dX[dir1];
+		        int newy = optPath.top().getPoint().y_pos + dY[dir1];
+
+		        if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && min_H > gridmapIn[newy-1][newx-1].getH()[goalIdx]){
+
+					min_H = gridmapIn[newy-1][newx-1].getH()[goalIdx];
+					finX = newx; finY = newy;
+		        }
+		    }
+		   
+		    optPath.push(gridmapIn[finY-1][finX-1]);
+		    tempPath.pathVect.push_back(gridmapIn[finY-1][finX-1].getPoint());		    
+		}
+		printf("cost of path that goes from robot %d to goal %d is ", i, goalIdx);
+		printf("%lf\n", gridmapIn[robotPosnsIn[i].y_pos-1][robotPosnsIn[i].x_pos-1].getH()[goalIdx]);
+		tempPath.cost = gridmapIn[robotPosnsIn[i].y_pos-1][robotPosnsIn[i].x_pos-1].getH()[goalIdx];
+		outPaths.push_back(tempPath);
+	}
+
+	return outPaths;
 }

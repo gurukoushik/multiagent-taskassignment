@@ -6,6 +6,7 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include <stack>
 #include "param.h"
 
 using namespace std;
@@ -17,12 +18,19 @@ using namespace std;
 #define LOWLEVEL_H
 
 ///// common class definitions //////
-struct Path{};
-
 struct Point{
 	int x_pos, y_pos;
 	Point(){}
 	Point(int xIn, int yIn): x_pos(xIn), y_pos(yIn){}
+	bool operator==(const Point& rhs)
+	{
+	    return (x_pos==rhs.x_pos) && (y_pos==rhs.y_pos);
+	}
+};
+
+struct Path{
+	vector<Point> pathVect;
+	double cost;
 };
 
 // defines a point on the gridmap
@@ -66,7 +74,8 @@ struct CompareF_map{
 void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& goals, double*map, 
 	int x_size, int y_size, int collision_thresh);
 
-void unconstrainedSearch();
+vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn, 
+	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size);
 
 
 

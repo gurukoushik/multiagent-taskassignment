@@ -64,7 +64,7 @@ static void planner(
         double* action_ptr
         )
 {   
-    //Define starts and goals
+    //Define starts and goals (num of goals >= num of robots)
     vector<Point> goals;
     for(int i=0; i<numofgoals; i++){
 
@@ -86,9 +86,17 @@ static void planner(
     backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
     printf("Dijkstra done\n");
 
-    // low-level search (call wherever you want)
-    vector<Path> lowLevelPaths = unconstrainedSearch(gridmap, robotPosns);
+    // define dummy assignmentVect for testing, overwrite when actual assignmentVect is obtained
+    vector<int> assignmentVect;
+    for(int i=0; i<numofagents;i++){
 
+        assignmentVect.push_back(numofgoals - 1 - i);
+    }
+
+
+    // low-level search (call wherever you want, need to have an assignmentVect first)
+    vector<Path> lowLevelPaths = unconstrainedSearch(gridmap, robotPosns, assignmentVect, goals, x_size, y_size);
+    printf("unconstrainedSearch done \n");
     // Rest of the stuff goes here
 
     for(int i=0; i<numofagents; i++)
