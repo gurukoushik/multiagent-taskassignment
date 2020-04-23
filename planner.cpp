@@ -72,12 +72,22 @@ static void planner(
         // Guru pls check ^
         goals.push_back(goal);
     }
+    vector<Point> robotPosns;
+    for(int i=0; i<numofagents; i++){
+
+        Point robPosn((int) robotpos[i], (int) robotpos[i+numofagents]); // in terms of x and y positions
+        // Guru pls check ^
+        robotPosns.push_back(robPosn);
+    }
 
     //Define gridmap for Dijkstra expansions
     State_map state_init_map(numofgoals);
     vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
     backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
     printf("Dijkstra done\n");
+
+    // low-level search (call wherever you want)
+    vector<Path> lowLevelPaths = unconstrainedSearch(gridmap, robotPosns);
 
     // Rest of the stuff goes here
 

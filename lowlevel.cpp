@@ -86,7 +86,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 }
 
 
-vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn){
+vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, vector<Point> robotPoses){
 
-
+	
 }
