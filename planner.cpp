@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "lowlevel.h"
+#include "param.h"
 
 using namespace std;
 
@@ -44,11 +45,11 @@ whereas 1-based indexing in matlab (so, robotpose and goalpose are 1-indexed) */
 #endif
 
 /* Number of directions possible to move along */
-#define NUMOFDIRS 9
+// #define numOfDirs 9
 
 // 9-Connected Grid
-int dX[NUMOFDIRS] = {-1, -1, -1,  0,  0,  1, 1, 1, 0};
-int dY[NUMOFDIRS] = {-1,  0,  1, -1,  1, -1, 0, 1, 0};
+// int dX[numOfDirs] = {-1, -1, -1,  0,  0,  1, 1, 1, 0};
+// int dY[numOfDirs] = {-1,  0,  1, -1,  1, -1, 0, 1, 0};
 
 static void planner(
         int numofagents,
@@ -67,7 +68,7 @@ static void planner(
     vector<Point> goals;
     for(int i=0; i<numofgoals; i++){
 
-        Point goal(goalpos[i], goalpos[i+numofgoals]); // in terms of x and y positions
+        Point goal((int) goalpos[i], (int) goalpos[i+numofgoals]); // in terms of x and y positions
         // Guru pls check ^
         goals.push_back(goal);
     }
@@ -75,7 +76,7 @@ static void planner(
     //Define gridmap for Dijkstra expansions
     State_map state_init_map(numofgoals);
     vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
-    backDijkstra(gridmap, goals, map, x_size, y_size);
+    backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
 
 
     // Rest of the stuff goes here
