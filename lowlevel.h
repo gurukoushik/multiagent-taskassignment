@@ -44,7 +44,7 @@ public:
 	void setPoint(Point positionIn){position = positionIn;}
 	void setX(int x_posIn){position.x_pos = x_posIn;}
 	void setY(int y_posIn){position.y_pos = y_posIn;}
-	void setH(double h_valIn){h_vals.push_back(h_valIn);}
+	void setH(int index, double h_valIn){h_vals[index] = h_valIn;}
 	void setGoalIndex(int goalIndexIn){goalIndex = goalIndexIn;}
 	void expand(){expanded = true;}
 	void contract(){expanded=false;}

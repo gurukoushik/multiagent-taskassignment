@@ -22,6 +22,8 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 		}
 	}
 
+	printf("map populated\n");
+
 	int numGoals = goals.size();
 	for(int i = 0; i<numGoals; i++){
 
@@ -35,7 +37,8 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 		}
 
 		// start state
-		gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1].setH(0.0);
+		gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1].setH(i, 0.0);
+		printf("h value at goal %d is %lf\n", i, gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1].getH()[i]);
 		priority_queue <State_map, vector<State_map>, CompareF_map> open_set_map;
 		open_set_map.push( gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1] );
 
@@ -54,6 +57,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 
 		        int newx = x_temp + dX[dir];
 		        int newy = y_temp + dY[dir];
+		        // printf("evaluated newx = %d, newy = %d\n", newx, newy);
 
 		        if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size)
 		        {
@@ -62,24 +66,27 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 		            (!gridmapIn[newy-1][newx-1].isExpanded()) )  //if free
 		            {
 
+		            	printf("gridmapIn LHS = %lf, RHS = %lf\n", gridmapIn[newy-1][newx-1].getH()[i], 
+		            		h_temp + (int)map[GETMAPINDEX(newx,newy,x_size,y_size)]);
 		            	if( gridmapIn[newy-1][newx-1].getH()[i] > h_temp + 
 		            		(int)map[GETMAPINDEX(newx,newy,x_size,y_size)] ){
 
-							gridmapIn[newy-1][newx-1].setH(h_temp + 
+							gridmapIn[newy-1][newx-1].setH(i, h_temp + 
 								(int)map[GETMAPINDEX(newx,newy,x_size,y_size)]);
 							open_set_map.push(gridmapIn[newy-1][newx-1]);
+							printf("Pushed to open_set_map \n");
 		            	}
 		            }
 		        }
 		    }
-		}
+		}		
 	}
 
 	return;
 }
 
 
-vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn){
+vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, vector<Point> robotPoses){
 
-
+	
 }
