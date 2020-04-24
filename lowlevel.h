@@ -17,7 +17,7 @@ using namespace std;
 #define LOWLEVEL_H
 
 ///// common class definitions //////
-struct Path{};
+
 
 struct Point{
 	int x_pos, y_pos;
@@ -27,6 +27,13 @@ struct Point{
     {
         return (x == s.x && y == s.y);
     }
+
+};
+
+struct Path{
+	vector<Point> pathVect;
+	double cost;
+
 };
 
 // defines a point on the gridmap
