@@ -86,9 +86,9 @@ public:
     void set_assignment(double* a) { assignment = a; }
     double* get_assignment() { return assignment }
 
+
     void set_solution(vector<Path> s) { solutions = s; }
     vector<Path> get_solution() { return solutions; }
-
 };
 
 struct min_heap {
@@ -99,12 +99,15 @@ struct min_heap {
 };
 
 
+
 bool check_conflict(Node* node, int numofagents, tuple<int, int, Point, int> &conflict) {
     vector<Path> sol = node->get_solution();
+
     for (int i = 0; i < numofagents; i++)
     {
         for (int j = i+1; j < numofagents - 1; j++) {
             int m;
+
             vector<Point> agent1 = sol[i].pathVect;
             vector<Point> agent2 = sol[j].pathVect;
             m = min((agent1.size(), agent2.size());
@@ -112,6 +115,7 @@ bool check_conflict(Node* node, int numofagents, tuple<int, int, Point, int> &co
             for (int k = 0; k < m; k++) {
                 if (agent1[k] == agent2[k]) {
                     conflict = make_tuple(i, j, agent1[k], k);
+
                     return 0;
                 }
 
@@ -128,10 +132,12 @@ bool check_conflict(Node* node, int numofagents, tuple<int, int, Point, int> &co
 
 double get_SIC(Node* node, int numofagents) {
     double cost = 0;
+
     vector<Path> solutions = node->get_solution();
     for (int i = 0; i < numofagents; i++)
     {
         cost += solutions[i].cost;
+
     }
     return cost;
 }
@@ -277,12 +283,14 @@ static void planner(
             child_node2->set_root(0);
 
             // call to Roshan's low level search with a vector of constraints. Should return data structure of type: vector <pair<double, vector<Point>>>
+
             child_node2->set_solution(constrainedSearch(gridmap, starts, goals_child, child_node2->get_constraints()));
             child_node2->set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
 
         }
     }
+
 
     vector<Path> set_of_sol = final_node->get_solution();
     if (goals_reached) {
