@@ -25,7 +25,7 @@ struct Point{
 	Point(int xIn, int yIn): x_pos(xIn), y_pos(yIn){}
 	bool operator==(const Point& s) const
     {
-        return (x == s.x && y == s.y);
+        return (x == s.x_pos && y == s.y_pos);
     }
 
 };
