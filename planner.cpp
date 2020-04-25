@@ -97,7 +97,13 @@ static void planner(
     // low-level search (call wherever you want, need to have an assignmentVect first)
     vector<Path> lowLevelPaths = unconstrainedSearch(gridmap, robotPosns, assignmentVect, goals, x_size, y_size);
     printf("unconstrainedSearch done \n");
+
     // Rest of the stuff goes here
+    // Below is what the constrained search should look like
+    vector<tuple<int, int, int>> tempConstr;
+    vector<Path> lowLevelPathsConst = constrainedSearch(gridmap, robotPosns, assignmentVect, goals, tempConstr, 
+        x_size, y_size);
+
 
     for(int i=0; i<numofagents; i++)
     {

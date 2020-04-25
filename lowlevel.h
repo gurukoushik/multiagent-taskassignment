@@ -58,15 +58,57 @@ public:
 	void contract(){expanded=false;}
 };
 
-
-
-//// low-level specific definitions //////
-
 // compare struct for the priority queue
 struct CompareF_map{
     bool operator()(State_map const & s1, State_map const & s2) {
         // return "true" if "p1" is ordered before "p2", for example:
         return s1.getH()[s1.getGoalIndex()] >  s2.getH()[s2.getGoalIndex()];
+    }
+};
+
+// defines a point for 3D search
+class Node_time{
+
+private:
+	Point position;
+	// int time_step;
+	double g_val;
+	double h_val;
+	Node_time* parent;
+	vector<Node_time*> successors;
+	bool expanded;
+
+public:
+	Node_time(): g_val(numeric_limits<double>::infinity()), expanded(false), parent(nullptr){}
+
+	Point getPoint() const {return position;}
+	Node_time* getParent() const{return parent;}
+	vector<Node_time*> getSuccessors() const {return successors;}
+	int getTime() const{return time_step;}
+	double getG() const {return h_vals;}
+	double getH() const {return h_vals;}
+	int getGoalIndex() const {return goalIndex;}
+	bool isExpanded() const {return expanded;}
+
+	void setPoint(Point positionIn){position = positionIn;}
+	void setParent(Node_time* parentIn){parent = parentIn;}
+	void addSuccessor(Node_time* succNode){successors.push_back(succNode);}
+	void setX(int x_posIn){position.x_pos = x_posIn;}
+	void setY(int y_posIn){position.y_pos = y_posIn;}
+	void setT(int time_stepIn){time_step = time_stepIn;}
+	void setG(double g_valIn){g_val = g_valIn;}
+	void setH(double h_valIn){h_val = h_valIn;}
+	void setGoalIndex(int goalIndexIn){goalIndex = goalIndexIn;}
+	void expand(){expanded = true;}
+	void contract(){expanded=false;}
+};
+
+// compare struct for the priority queue
+struct CompareF_time{
+    bool operator()(Node_time const & s1, Node_time const & s2) {
+        // return "true" if "p1" is ordered before "p2", for example:
+        long eps = 1;
+        return eps*s1.getH() + s1.getG() >  eps*s2.getH() + s1.getG();
     }
 };
 
@@ -85,13 +127,13 @@ void constrainedSearch();
 
 
 // junk
-vector<vector<int> > temp;
-for(int i=0; i<numofagents; i++){
+// vector<vector<int> > temp;
+// for(int i=0; i<numofagents; i++){
 
-	vector<int> tempTemp;
-	for(int j=0; j<numofgoals;j++){
+// 	vector<int> tempTemp;
+// 	for(int j=0; j<numofgoals;j++){
 
-		tempTemp.push_back( gridmap[robotPosns[i].y_pos - 1][robotPosns[i].x_pos - 1].getH()[j] );
-	}
-	temp.push_back(tempTemp);
-}
+// 		tempTemp.push_back( gridmap[robotPosns[i].y_pos - 1][robotPosns[i].x_pos - 1].getH()[j] );
+// 	}
+// 	temp.push_back(tempTemp);
+// }

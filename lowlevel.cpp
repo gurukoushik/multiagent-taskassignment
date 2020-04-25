@@ -10,6 +10,7 @@ State_map::State_map(int numofgoalsIn){
 	expanded = false; goalIndex = -1;
 }
 
+
 void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& goals, double*map, 
 	int x_size, int y_size, int collision_thresh){
 
@@ -136,4 +137,101 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 	}
 
 	return outPaths;
+}
+
+
+vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn, 
+	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, int, int>>& tempConstr, 
+        int x_size, int y_size){
+
+	int numofagents = robotPosnsIn.size();
+	for(int i=0; i < numofagents; i++){
+
+		// initialize stuff
+		int curr_time=0;
+		robotposeX = robotPosnsIn[i].x_pos; robotposeY = robotPosnsIn[i].y_pos;
+		unsigned long long index_temp = 0; double g_temp =0; 
+		int x_temp = robotposeX; int y_temp = robotposeY; int t_temp = curr_time; 
+
+		int goalIdx = assignment[i];
+		if(goalIdx>=goalsIn.size()){
+
+			printf("goalidx is greater than no of goals\n");
+			continue;
+		}
+
+		// set up hash table
+	    unordered_set<unsigned long long, double> closed_set;
+
+	    //robot start state
+	    Node_time* rob_start = new Node_time;
+	    rob_start->setX(robotposeX); rob_start->setY(robotposeY); rob_start->setT(curr_time);
+	    rob_start->setG(0.0);
+	    rob_start->setH( gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx] );
+
+	    priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
+
+	    // start while loop for A* expansion
+		while( !open_set.empty() ){
+
+			Node_time* tempPtr = open_set.top();			
+
+			int x_temp = tempPtr->getX(), y_temp = tempPtr->getY(), t_temp = tempPtr->getT();
+			double g_temp = tempPtr->getG();
+			tempPtr->expand();
+			closed_set.insert(GetIndex(tempPtr));
+			open_set.pop();
+
+			// span through successors at next time step
+			t_ct++;
+
+			for(int dir = 0; dir < numOfDirs; dir++){
+
+		        int newx = x_temp + dX[dir], newy = y_temp + dY[dir];
+		        int newt = t_temp + 1;
+		        unsigned long long index_temp = GetIndex(tempPtr);
+
+		        if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && 
+		        	((int)map[GETMAPINDEX(newx,newy,x_size,y_size)] >= 0) &&
+		        	((int)map[GETMAPINDEX(newx,newy,x_size,y_size)] < collision_thresh) && 
+		        	(closed_set.find(index_temp)==closed_set.end()) &&
+		        	 CBSOkay(ConstrIn, newx, newy, newt, i) ){
+
+					Node_time* newNode =  new Node_time;
+					newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
+					newNode->setG(g_temp + (int)map[GETMAPINDEX(newx,newy,x_size,y_size)]);
+					newNode->setH( gridmapIn[newy - 1][newx - 1].getH()[goalIdx] );
+					
+					newNode->setParent(tempPtr);
+					tempPtr->addSuccessor(newNode);
+					open_set.push(newNode);
+		        }
+		    }
+
+		    // if (t_ct >= 790000){cout << "Unable to find a solution\n"<<endl;}
+		}
+	}
+
+}
+
+
+
+
+// helper functions
+unsigned long long GetIndex(Node_time* tempPtrIn){
+
+	int x = tempPtrIn->getX(); int y = tempPtrIn->getY(); int t = tempPtr->getT();
+
+	// return t*(2*t-1)*(2*t+1)/3 + (y+t)*(2*t+1) + x + t
+
+	// return ( (double) ((x + y) * (x + y + 1.0)/2.0 + y + t)*((x + y) 
+	// 	* (double)(x + y + 1.0)/2.0 + y + t + 1.0) )/2.0 + t;
+
+	return floor( 1000000* (sqrt(2)*x + sqrt(5)*y + sqrt(11)*t) );
+}
+
+// CBS constraint
+bool CBSOkay(const vector<tuple<int, int, int>>& tempConstr, int newx, int newy, int newt, int i){
+
+	if(i == )
 }
