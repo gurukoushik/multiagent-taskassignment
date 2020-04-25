@@ -100,17 +100,23 @@ static void planner(
 
     // Rest of the stuff goes here
     // Below is what the constrained search should look like
-    vector<tuple<int, Point, int>> tempConstr;
+    vector<tuple<int, Point, int> > tempConstr;
+    Point temp1(3,4);
+    tuple<int, Point, int> tempTuple = make_tuple(2, temp1, 4);
+    tempConstr.push_back(tempTuple);
+
+    printf("before entering constrainedSearch\n");
     vector<Path> lowLevelPathsConst = constrainedSearch(gridmap, robotPosns, assignmentVect, goals, tempConstr, 
         x_size, y_size, map, collision_thresh);
 
+    printf("exited constrainedSearch\n");
 
-    for(int i=0; i<numofagents; i++)
-    {
-        action_ptr[i] = robotpos[i] - 1;
-        action_ptr[i+numofagents] = robotpos[i+numofagents] + 0;
-        // mexPrintf("%f %f\n",robotpos[i],robotpos[i+numofagents]);
-    }
+    // for(int i=0; i<numofagents; i++)
+    // {
+    //     action_ptr[i] = robotpos[i] - 1;
+    //     action_ptr[i+numofagents] = robotpos[i+numofagents] + 0;
+    //     // mexPrintf("%f %f\n",robotpos[i],robotpos[i+numofagents]);
+    // }
 }
 
 // prhs contains input parameters (4):

@@ -141,7 +141,7 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 
 
 vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn, 
-	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int>>& tempConstr, 
+	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int> >& tempConstr, 
         int x_size, int y_size, double* map, int collision_thresh){
 
 	int numofagents = robotPosnsIn.size();
@@ -171,26 +171,26 @@ vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, con
 	    rob_start->setH( gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx] );
 
 	    priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
+	    open_set.push(rob_start);
 
+	    printf("before entering while\n");
 	    // start while loop for A* expansion
 		while( !open_set.empty() && !(open_set.top()->getPoint() == goalsIn[goalIdx]) ){
 
 			Node_time* tempPtr = open_set.top();			
 
-			int x_temp = tempPtr->getPoint().x_pos, y_temp = tempPtr->getPoint().y_pos, t_temp = tempPtr->getTime();
+			int x_temp = tempPtr->getPoint().x_pos, y_temp = tempPtr->getPoint().y_pos, 
+				t_temp = tempPtr->getTime();
 			double g_temp = tempPtr->getG();
 			tempPtr->expand();
-			closed_set.insert(GetIndex(tempPtr));
+			closed_set.insert(GetIndex(x_temp, y_temp, t_temp));
 			open_set.pop();
-
-			// // span through successors at next time step
-			// t_ct++;
 
 			for(int dir = 0; dir < numOfDirs; dir++){
 
 		        int newx = x_temp + dX[dir], newy = y_temp + dY[dir];
 		        int newt = t_temp + 1;
-		        unsigned long long index_temp = GetIndex(tempPtr);
+		        unsigned long long index_temp = GetIndex(newx, newy, newt);
 
 		        if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && 
 		        	((int)map[GETMAPINDEX(newx,newy,x_size,y_size)] >= 0) &&
@@ -198,6 +198,7 @@ vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, con
 		        	(closed_set.find(index_temp)==closed_set.end()) &&
 		        	CBSOkay(tempConstr, newx, newy, newt, i) ){
 
+					printf("entered if loop\n");
 					Node_time* newNode =  new Node_time;
 					newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
 					newNode->setG(g_temp + (int)map[GETMAPINDEX(newx,newy,x_size,y_size)]);
@@ -245,9 +246,9 @@ vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, con
 
 
 // helper functions
-unsigned long long GetIndex(Node_time* tempPtrIn){
+unsigned long long GetIndex(int x, int y, int t){
 
-	int x = tempPtrIn->getPoint().x_pos; int y = tempPtrIn->getPoint().y_pos; int t = tempPtrIn->getTime();
+	// int x = position.x_pos; int y = position.y_pos; int t = time;
 
 	// return t*(2*t-1)*(2*t+1)/3 + (y+t)*(2*t+1) + x + t
 
@@ -260,6 +261,7 @@ unsigned long long GetIndex(Node_time* tempPtrIn){
 // CBS constraint
 bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int newy, int newt, int i_agent){
 
+	printf("entered CBSokay\n");
 	int numOfConst = tempConstr.size();
 	// bool result = true;
 	for(int i=0; i<numOfConst; i++ ){
