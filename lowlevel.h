@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stack>
+// #include <map>
 #include "param.h"
 
 using namespace std;
@@ -71,7 +72,7 @@ class Node_time{
 
 private:
 	Point position;
-	// int time_step;
+	int time_step;
 	double g_val;
 	double h_val;
 	Node_time* parent;
@@ -85,9 +86,9 @@ public:
 	Node_time* getParent() const{return parent;}
 	vector<Node_time*> getSuccessors() const {return successors;}
 	int getTime() const{return time_step;}
-	double getG() const {return h_vals;}
-	double getH() const {return h_vals;}
-	int getGoalIndex() const {return goalIndex;}
+	double getG() const {return g_val;}
+	double getH() const {return h_val;}
+	// int getGoalIndex() const {return goalIndex;}
 	bool isExpanded() const {return expanded;}
 
 	void setPoint(Point positionIn){position = positionIn;}
@@ -98,17 +99,17 @@ public:
 	void setT(int time_stepIn){time_step = time_stepIn;}
 	void setG(double g_valIn){g_val = g_valIn;}
 	void setH(double h_valIn){h_val = h_valIn;}
-	void setGoalIndex(int goalIndexIn){goalIndex = goalIndexIn;}
+	// void setGoalIndex(int goalIndexIn){goalIndex = goalIndexIn;}
 	void expand(){expanded = true;}
 	void contract(){expanded=false;}
 };
 
 // compare struct for the priority queue
 struct CompareF_time{
-    bool operator()(Node_time const & s1, Node_time const & s2) {
+    bool operator()(Node_time* const & s1, Node_time* const & s2) {
         // return "true" if "p1" is ordered before "p2", for example:
         long eps = 1;
-        return eps*s1.getH() + s1.getG() >  eps*s2.getH() + s1.getG();
+        return eps*s1->getH() + s1->getG() >  eps*s2->getH() + s1->getG();
     }
 };
 
@@ -120,8 +121,13 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size);
 
 
+vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn, 
+	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int>>& tempConstr, 
+        int x_size, int y_size, double* map, int collision_thresh);
 
-void constrainedSearch();
+unsigned long long GetIndex(Node_time* tempPtrIn);
+
+bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int newy, int newt, int i_agent);
 
 #endif
 

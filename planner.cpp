@@ -100,9 +100,9 @@ static void planner(
 
     // Rest of the stuff goes here
     // Below is what the constrained search should look like
-    vector<tuple<int, int, int>> tempConstr;
+    vector<tuple<int, Point, int>> tempConstr;
     vector<Path> lowLevelPathsConst = constrainedSearch(gridmap, robotPosns, assignmentVect, goals, tempConstr, 
-        x_size, y_size);
+        x_size, y_size, map, collision_thresh);
 
 
     for(int i=0; i<numofagents; i++)
