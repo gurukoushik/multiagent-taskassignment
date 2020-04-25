@@ -1,3 +1,4 @@
+
 /*=================================================================
  *
  * planner.cpp
@@ -20,7 +21,7 @@
 
 
 using namespace std;
-static Node* final_node;
+
 /* Input Arguments */
 #define	NUM_OF_AGENTS           prhs[0]
 #define	NUM_OF_GOALS            prhs[1]
@@ -90,6 +91,7 @@ public:
     vector<Path> get_solution() { return solutions; }
 
 };
+static Node* final_node;
 
 struct min_heap {
     bool operator()(Node* p1, Node* p2)

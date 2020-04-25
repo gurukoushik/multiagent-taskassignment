@@ -27,11 +27,13 @@ struct Point{
     {
         return (x == s.x_pos && y == s.y_pos);
     }
+
 };
 
 struct Path{
 	vector<Point> pathVect;
 	double cost;
+
 };
 
 // defines a point on the gridmap
