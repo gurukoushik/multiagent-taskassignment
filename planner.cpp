@@ -20,7 +20,7 @@
 
 
 using namespace std;
-
+static Node* final_node;
 /* Input Arguments */
 #define	NUM_OF_AGENTS           prhs[0]
 #define	NUM_OF_GOALS            prhs[1]
@@ -80,8 +80,8 @@ public:
     bool get_root() { return root; }
 
     void push_constraints(int agent, Point index, int time) { constraints.push_back(make_tuple(agent, index, time)); }
-    void set_constraints(vector<tuple<int, int, int>> con) { constraints = con; }
-    vector<tuple<int, int, int>> get_constraints() { return constraints }
+    void set_constraints(vector<tuple<int, Point, int>> con) { constraints = con; }
+    vector<tuple<int, Point, int>> get_constraints() { return constraints }
 
     void set_assignment(double* a) { assignment = a; }
     double* get_assignment() { return assignment }
@@ -136,6 +136,28 @@ double get_SIC(Node* node, int numofagents) {
     return cost;
 }
 
+vector<vector<double>> gridmap_to_costmatrix(int numofagents, int numofgoals,vector<vector<State_map> > gridmap, vector<Point> robotPosns) {
+    vector<vector<double> > temp;
+    for(int i=0; i<numofagents; i++){
+
+        vector<double> tempTemp;
+        for(int j=0; j<numofgoals;j++){
+            tempTemp.push_back( gridmap[robotPosns[i].y_pos - 1][robotPosns[i].x_pos - 1].getH()[j] );}
+        temp.push_back(tempTemp);
+    }
+    return temp;
+}
+
+vector<Point> Guru_to_Roshan(double* pos, int numofagents) {
+    vector<Point> pos_vector;
+    for (int i = 0; i < numofagents; i++) {
+        Point start(pos[i], pos[i + numofagents]); // in terms of x and y positions
+        pos_vector.push_back(start);
+    }
+    return pos_vector;
+}
+
+
 
 
 
@@ -157,24 +179,15 @@ static void planner(
     
 
    
-    static Node* final_node;
+    
     int goals_reached = 0;
 
     if (curr_time == 0) {
-
-        //  Defines goal position for Roshan's code
-        vector<Point> goals;
-        for (int i = 0; i < numofgoals; i++) {
-            Point goal(goalpos[i], goalpos[i + numofgoals]); // in terms of x and y positions
-            goals.push_back(goal);
-        }
-        vector<Point> starts;
-        for (int i = 0; i < numofagents; i++) {
-            Point start(robotpos[i], robotpos[i + numofagents]); // in terms of x and y positions
-            starts.push_back(start);
-        }
-
-
+       
+        //  Defines start and goal position for Roshan's code
+        vector<Point> goals = Guru_to_Roshan(goalpos, numofagents);
+        vector<Point> starts = Guru_to_Roshan(robotpos, numofagents);
+        
 
         //  For Guru's part, start and goals are still defined as arrays - double*
 
@@ -189,15 +202,12 @@ static void planner(
         Node* start_node = new Node(NULL, 1);
 
         // call to Guru's initial assignment function. Should return goal positions of type double*. 
-        double* goalpos_new = first_assignment(robotpos, goalpos, gridmap);
+        vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap,  starts);
+        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix);
         start_node->set_assignment(goalpos_new);
 
         // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
-        vector<Point> goals_new;
-        for (int i = 0; i < numofgoals; i++) {
-            Point goal(goalpos_new[i], goalpos_new[i + numofgoals]); // in terms of x and y positions
-            goals_new.push_back(goal);
-        }
+        vector<Point> goals_new = Guru_to_Roshan(goalpos_new, numofgoals);
         start_node->set_solution(unconstrainedSearch(gridmap, starts, goals_new));
         start_node->set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
@@ -232,15 +242,12 @@ static void planner(
                 backDijkstra(gridmap, goals, map, x_size, y_size);
 
                 // call to Guru's new assignment function. Should return goal positions of type double*. Should input updated gridmap if the map changes 
-                double* goalpos_new = new_assignment(robotpos, goalpos, gridmap);
+                vector<vector<double>> cost_matrix_new = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
+                double* goalpos_new = new_assignment(robotpos, goalpos, cost_matrix_new);
                 new_node->set_assignment(goalpos_new);
 
                 // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
-                vector<Point> goals_new_tree;
-                for (int i = 0; i < numofgoals; i++) {
-                    Point goal(goalpos_new[i], goalpos_new[i + numofgoals]); // in terms of x and y positions
-                    goals_new_tree.push_back(goal);
-                }
+                vector<Point> goals_new_tree = Guru_to_Roshan(goalpos_new, numofgoals);
                 new_node->set_solution(unconstrainedSearch(gridmap, starts, goals_new_tree));
                 new_node->set_cost(get_SIC(new_node, numofagents));
                 OPEN.push(new_node);
@@ -249,12 +256,8 @@ static void planner(
 
             // redefinition of goal for Roshan's code from double* to vector<Point>
             double* goalpos_child = curr->get_assignment();
-            vector<Point> goals_child;
-            for (int i = 0; i < numofgoals; i++) {
-                Point goal(goalpos_child[i], goalpos_child[i + numofgoals]); // in terms of x and y positions
-                goals_child.push_back(goal);
-            }
-
+            vector<Point> goals_child = Guru_to_Roshan(goalpos_child, numofgoals);
+            
 
             // create child node for conflicting agent 1
             Node* child_node1;
@@ -288,8 +291,8 @@ static void planner(
     if (goals_reached) {
         for (int i = 0; i < numofagents; i++) {
             vector<Point> sol = set_of_sol[i].pathVect;
-            action_ptr[i] = sol[curr_time].x;
-            action_ptr[i + numofagents] = sol[curr_time].y;
+            action_ptr[i] = sol[curr_time].x_pos;
+            action_ptr[i + numofagents] = sol[curr_time].y_pos;
         }
 
     }
