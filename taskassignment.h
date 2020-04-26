@@ -9,7 +9,7 @@ private:
 	vector<vector<int>> constraintsO;
 	int cost;
 public:
-	ASG(vector<vector<int>> new_assign, vector<vector<int>> costmatrix)
+	ASG(vector<vector<int>> new_assign, vector<vector<double>> costmatrix)
 	{
 		solution = new_assign;
 		cost = costofassignment(costmatrix);
@@ -20,12 +20,12 @@ public:
 	vector<vector<int>> getsolution(){return solution;}
 	vector<vector<int>> getconstraintsI(){return constraintsI;}
 	vector<vector<int>> getconstraintsO(){return constraintsO;}
-	int getcost(){return cost;}
+	double getcost(){return cost;}
 	void setsolution(vector<vector<int>> solution){this->solution = solution;}
 	void setconstraintsI(vector<vector<int>> constraintsI){this->constraintsI = constraintsI;}
 	void setconstraintsO(vector<vector<int>> constraintsO){this->constraintsO = constraintsO;}
-	void setcost(int cost){this->cost = cost;}
-	int costofassignment(vector<vector<int>> cost_matrix)
+	void setcost(double cost){this->cost = cost;}
+	int costofassignment(vector<vector<double>> cost_matrix)
 	{
 		int n = cost_matrix.size();
 		int m = cost_matrix[0].size();
@@ -75,7 +75,7 @@ void goalsort(double* goalpos, vector<vector<int>> assignmentmatrix, double* goa
 	}
 }
 
-vector<vector<int>> constrainedassignment(vector<vector<int>> constraintsI, vector<vector<int>> constraintsO, vector<vector<int>> costmatrix)
+vector<vector<int>> constrainedassignment(vector<vector<int>> constraintsI, vector<vector<int>> constraintsO, vector<vector<double>> costmatrix)
 {
 	int n = costmatrix.size();
 
@@ -94,7 +94,7 @@ vector<vector<int>> constrainedassignment(vector<vector<int>> constraintsI, vect
 	return assignment;
 }
 
-double* first_assignment(double* robotpos, double* goalpos, vector<vector<int>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
+double* first_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
 {
 	int n = costmatrix.size();
 	static double goalnew[100]; 
@@ -109,7 +109,7 @@ double* first_assignment(double* robotpos, double* goalpos, vector<vector<int>> 
 	return goalnew;
 }
 
-double* next_assignment(double* robotpos, double* goalpos, vector<vector<int>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
+double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
 {
 	int n = costmatrix.size();
 	static double goalnew[100]; 

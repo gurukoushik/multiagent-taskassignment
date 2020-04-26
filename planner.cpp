@@ -6,8 +6,11 @@
  *=================================================================*/
 
 /* Include Required Header Files */
+#include <iostream> 
 #include <math.h>
 #include <mex.h>
+#include <cstdio>
+
 #include <algorithm>
 #include <limits>
 #include <vector>
@@ -17,7 +20,7 @@
 #include "lowlevel.h"
 
 #include "param.h"
-
+#include "taskassignment.h"
 
 
 using namespace std;
@@ -60,7 +63,7 @@ private:
     Node* prev_node;
     double cost;
     bool root;
-    vector <tuple<int, int, int>> constraints;
+    vector <tuple<int, Point, int>> constraints;
     vector <Path> solutions;
     double* assignment;
 
@@ -82,10 +85,10 @@ public:
 
     void push_constraints(int agent, Point index, int time) { constraints.push_back(make_tuple(agent, index, time)); }
     void set_constraints(vector<tuple<int, Point, int>> con) { constraints = con; }
-    vector<tuple<int, Point, int>> get_constraints() { return constraints }
+    vector<tuple<int, Point, int>> get_constraints() { return constraints; }
 
     void set_assignment(double* a) { assignment = a; }
-    double* get_assignment() { return assignment }
+    double* get_assignment() { return assignment; }
 
     void set_solution(vector<Path> s) { solutions = s; }
     vector<Path> get_solution() { return solutions; }
@@ -109,10 +112,12 @@ bool check_conflict(Node* node, int numofagents, tuple<int, int, Point, int> &co
             int m;
             vector<Point> agent1 = sol[i].pathVect;
             vector<Point> agent2 = sol[j].pathVect;
-            m = min((agent1.size(), agent2.size());
+            m = min(agent1.size(), agent2.size());
             
             for (int k = 0; k < m; k++) {
                 if (agent1[k] == agent2[k]) {
+                    printf("x %d %d", agent1[k].x_pos, agent2[k].x_pos);
+                    printf("y %d %d", agent1[k].y_pos, agent2[k].y_pos);
                     conflict = make_tuple(i, j, agent1[k], k);
                     return 0;
                 }
@@ -160,6 +165,35 @@ vector<Point> Guru_to_Roshan(double* pos, int numofagents) {
 }
 
 
+void print_solutions(Node* start_node, int numofagents) {
+    printf("Solutions after search:");
+    for (int i = 0; i < numofagents; i++) {
+        printf("\n Agent  %d:   ", i);
+        vector<Path> paths = (start_node->get_solution());
+        vector<Point> each_path = paths[i].pathVect;
+        for (int j = 0; j < each_path.size(); j++) {
+            printf("(%d, %d),   ", each_path[j].x_pos, each_path[j].y_pos);
+        }
+
+    }
+}
+
+
+
+void print_dble(double* goalpos_new, int numofagents) {
+    for (int i = 0; i < numofagents; i++) {
+        printf("Agent goal positions \n %f %f \n", goalpos_new[i], goalpos_new[i + numofagents]);
+
+    }
+}
+
+void print_vector_of_Points(vector<Point> goals_new_tree, int numofagents) {
+    for (int i = 0; i < numofagents; i++) {
+        printf("Agent goal  positions for Roshan  %d %d \n", goals_new_tree[i].x_pos, goals_new_tree[i].y_pos);
+    }
+
+}
+
 
 
 
@@ -185,32 +219,45 @@ static void planner(
     int goals_reached = 0;
 
     if (curr_time == 0) {
-       
+
         //  Defines start and goal position for Roshan's code
         vector<Point> goals = Guru_to_Roshan(goalpos, numofagents);
         vector<Point> starts = Guru_to_Roshan(robotpos, numofagents);
-        
+
 
         //  For Guru's part, start and goals are still defined as arrays - double*
 
         //  Define gridmap for Dijkstra expansions
         State_map state_init_map(numofgoals);
         vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
-        backDijkstra(gridmap, goals, map, x_size, y_size);
-
+        backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
+        
+        
 
         priority_queue<Node*, vector<Node*>, min_heap> OPEN;
+        priority_queue<ASG, vector<ASG>, ASG_Comparator> ASG_OPEN;
         int goal_reached = 0;
         Node* start_node = new Node(NULL, 1);
 
         // call to Guru's initial assignment function. Should return goal positions of type double*. 
         vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap,  starts);
-        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix);
+        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN);
         start_node->set_assignment(goalpos_new);
+        printf("first assignment done \n");
 
         // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
         vector<Point> goals_new = Guru_to_Roshan(goalpos_new, numofgoals);
-        start_node->set_solution(unconstrainedSearch(gridmap, starts, goals_new));
+        vector<int> assignmentVect;
+        for (int i = 0; i < numofagents; i++) {
+
+            assignmentVect.push_back(i);
+        }
+       
+        start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals_new, x_size, y_size));
+        printf("unconstrained search done\n");
+        print_solutions(start_node, numofagents);
+        
+        
         start_node->set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
 
@@ -224,68 +271,98 @@ static void planner(
 
             // no conflicting paths found
             int no_conflict = check_conflict(curr, numofagents, conflict);
+            
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
+                printf("goals reached\n");
                 break;
             }
-
-
-            // create root node of new tree
+            printf("conflict exists\n");
+           
+             //create root node of new tree
             if (curr->get_root()) {
-                Node* new_node;
-                new_node->set_root(1);
+                printf("Starting new tree\n");
+                Node* new_node = new Node(NULL, 1);
+                
 
                 // In case there are changes in the map like sudden addition of obstacles. Recompute heuristics by calling Roshan's functions. 
                 // In this case we'd also need to update the cost of the map.
                 // More on this update later
                 State_map state_init_map(numofgoals);
                 vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
-                backDijkstra(gridmap, goals, map, x_size, y_size);
-
+                backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh); 
+               
+              
                 // call to Guru's new assignment function. Should return goal positions of type double*. Should input updated gridmap if the map changes 
                 vector<vector<double>> cost_matrix_new = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
-                double* goalpos_new = new_assignment(robotpos, goalpos, cost_matrix_new);
-                new_node->set_assignment(goalpos_new);
+                double* goalpos_new = next_assignment(robotpos, goalpos, cost_matrix_new, ASG_OPEN);
 
+                new_node->set_assignment(goalpos_new);
+                printf("new assignment  done\n");
                 // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
                 vector<Point> goals_new_tree = Guru_to_Roshan(goalpos_new, numofgoals);
-                new_node->set_solution(unconstrainedSearch(gridmap, starts, goals_new_tree));
+                new_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals_new_tree, x_size, y_size)); 
+                printf("unconstrained search for new tree done\n");
+                print_solutions(new_node, numofagents);
                 new_node->set_cost(get_SIC(new_node, numofagents));
                 OPEN.push(new_node);
             }
-
-
+            
+            printf("children of parent tree\n");
             // redefinition of goal for Roshan's code from double* to vector<Point>
             double* goalpos_child = curr->get_assignment();
             vector<Point> goals_child = Guru_to_Roshan(goalpos_child, numofgoals);
             
 
             // create child node for conflicting agent 1
-            Node* child_node1;
+            Node* child_node1 = new Node(curr, false);
+            
             child_node1->set_constraints(curr->get_constraints());
             child_node1->push_constraints(get<0>(conflict), get<2>(conflict), get<3>(conflict));
+            printf(" Constraint for first child node (agent %d, Point(%d %d), time %d) \n", get<0>(conflict), get<2>(conflict).x_pos, get<2>(conflict).y_pos, get<3>(conflict));
             child_node1->set_assignment(goalpos_child);
-            child_node1->set_root(0);
-
             // call to Roshan's low level search with a vector of constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
-            child_node1->set_solution(constrainedSearch(gridmap, starts, goals_child, child_node1->get_constraints()));
+            vector<Path> x = constrainedSearch(gridmap, starts, assignmentVect, goals_child, child_node1->get_constraints(), x_size, y_size, map, collision_thresh);
+            printf("\n constrained search done. Solution for\n");
+            
+            for (int i = 0; i < numofagents; i++) {
+                printf("\nagent %d: ", i);
+               
+                vector<Point> each_path = x[i].pathVect;
+                for (int j = 0; j < each_path.size(); j++) {
+                    printf("(%f, %f),  ", each_path[j].x_pos, each_path[j].y_pos);
+                }
+
+            }
+            child_node1->set_solution(x);
             child_node1->set_cost(get_SIC(child_node1, numofagents));
             OPEN.push(child_node1);
+            
 
-
+            
             // create child node for conflicting agent 2
-            Node* child_node2;
+            Node* child_node2 = new Node(curr, false);
+
             child_node2->set_constraints(curr->get_constraints());
             child_node2->push_constraints(get<1>(conflict), get<2>(conflict), get<3>(conflict));
             child_node2->set_assignment(goalpos_child);
-            child_node2->set_root(0);
+            vector<Path> y = constrainedSearch(gridmap, starts, assignmentVect, goals_child, child_node1->get_constraints(), x_size, y_size, map, collision_thresh);
+            for (int i = 0; i < numofagents; i++) {
+                printf("\n agent %d: ", i);
 
+                vector<Point> each_path = x[i].pathVect;
+                for (int j = 0; j < each_path.size(); j++) {
+                    printf("(%f, %f),  ", each_path[j].x_pos, each_path[j].y_pos);
+                }
+
+            }
             // call to Roshan's low level search with a vector of constraints. Should return data structure of type: vector <pair<double, vector<Point>>>
-            child_node2->set_solution(constrainedSearch(gridmap, starts, goals_child, child_node2->get_constraints()));
+            child_node2->set_solution(constrainedSearch(gridmap, starts, assignmentVect, goals_child, child_node2->get_constraints(), x_size, y_size, map, collision_thresh));
             child_node2->set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
-
+            
+            break;
         }
     }
 

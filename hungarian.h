@@ -15,7 +15,7 @@ using namespace std;
 class taskassignment
 {
 private:
-	vector<vector<int>> cost_matrix;
+	vector<vector<double>> cost_matrix;
 	int n;
 	vector<vector<int>> mask;
 	vector<int> rowcover;
@@ -26,7 +26,7 @@ private:
 	vector<vector<int>> path;
 	int step;
 public:
-	taskassignment(vector<vector<int>> cost_matrix, int n)
+	taskassignment(vector<vector<double>> cost_matrix, int n)
 	{
 		this->cost_matrix = cost_matrix;
 		this->n = n;
@@ -352,7 +352,7 @@ public:
 		step = 4;
 	}
 
-	void print_matrix(vector<vector<auto>> matrix)
+	void print_matrix(vector<vector<int>> matrix)
 	{
 		// Print matrix
 		for(int i = 0; i < n; i++)
@@ -364,8 +364,8 @@ public:
 			cout << endl;
 		}
 	}
-
-	void print_vector(vector<auto> vec)
+	
+	/*void print_vector(vector<auto> vec)
 	{
 		// Print vector
 		for(int j = 0; j < n; j++)
@@ -373,7 +373,7 @@ public:
 			cout << vec[j] << " ";
 		}
 		cout << endl;
-	}
+	}*/
 
 	vector<vector<int>> hungarian()
 	{
