@@ -340,7 +340,7 @@ static void planner(
                     x.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    x.push_back(constrainedSearch(gridmap, starts, assignmentVect, goals_child, constraints_per_agent, x_size, y_size, map, collision_thresh))
+                    x.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], constraints_per_agent, x_size, y_size, map, collision_thresh))
                 }
             }
             
@@ -370,7 +370,7 @@ static void planner(
                     y.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    y.push_back(constrainedSearch(gridmap, starts, assignmentVect, goals_child, constraints_per_agent, x_size, y_size, map, collision_thresh))
+                    y.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], constraints_per_agent, x_size, y_size, map, collision_thresh))
                 }
             }
            
