@@ -90,6 +90,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn,
 	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size) {
 
+	printf("entering unconstrainedSearch\n");
 	vector<Path> outPaths;
 
 	for (int i = 0; i < robotPosnsIn.size(); i++) {
@@ -130,8 +131,8 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 			optPath.push(gridmapIn[finY - 1][finX - 1]);
 			tempPath.pathVect.push_back(gridmapIn[finY - 1][finX - 1].getPoint());
 		}
-		printf("cost of path that goes from robot %d to goal %d is ", i, goalIdx);
-		printf("%lf\n", gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx]);
+		// printf("cost of path that goes from robot %d to goal %d is ", i, goalIdx);
+		// printf("%lf\n", gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx]);
 		tempPath.cost = gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx];
 		outPaths.push_back(tempPath);
 	}
@@ -140,25 +141,24 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 }
 
 
-Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point& robotPosnIn,
+Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point& robotPosnIn, int robotIndex,
 	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int> >& tempConstr,
 	int x_size, int y_size, double* map, int collision_thresh) {
 	
-	printf("\n happening");
+	printf("\n entering constrainedSearch \n");
 	// int numofagents = robotPosnsIn.size();
 	Path tempPathConst;
 
 	// initialize stuff		
 	int curr_time = 0;
-	int robotposeX = robotPosnsIn[i].x_pos, robotposeY = robotPosnsIn[i].y_pos;
+	int robotposeX = robotPosnIn.x_pos, robotposeY = robotPosnIn.y_pos;
 	unsigned long long index_temp = 0; double g_temp = 0;
 	int x_temp = robotposeX; int y_temp = robotposeY; int t_temp = curr_time;
+	int goalIdx = assignment[robotIndex];
 
-	int goalIdx = goalIn;
 	if (goalIdx >= goalsIn.size()) {
 
 		printf("goalidx is greater than no of goals\n");
-		continue;
 	}
 
 	// set up hash table
@@ -173,7 +173,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 	priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
 	open_set.push(rob_start);
 
-	printf("before entering while\n");
+	// printf("before entering while\n");
 	// start while loop for A* expansion
 	while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[goalIdx])) {
 
@@ -196,9 +196,9 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 				((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] >= 0) &&
 				((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] < collision_thresh) &&
 				(closed_set.find(index_temp) == closed_set.end()) &&
-				CBSOkay(tempConstr, newx, newy, newt, i)) {
+				CBSOkay(tempConstr, newx, newy, newt, robotIndex)) {
 
-				printf("entered if loop\n");
+				// printf("entered if loop\n");
 				Node_time* newNode = new Node_time;
 				newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
 				newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]);
@@ -261,7 +261,7 @@ unsigned long long GetIndex(int x, int y, int t) {
 // CBS constraint
 bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int newy, int newt, int i_agent) {
 
-	printf("entered CBSokay\n");
+	// printf("entered CBSokay\n");
 	int numOfConst = tempConstr.size();
 	// bool result = true;
 	for (int i = 0; i < numOfConst; i++) {

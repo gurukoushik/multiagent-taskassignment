@@ -120,8 +120,8 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn,
 	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size);
 
-Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn,
-	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int>>& tempConstr,
+Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point& robotPosnIn, int robotIndex,
+	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int> >& tempConstr,
 	int x_size, int y_size, double* map, int collision_thresh);
 
 unsigned long long GetIndex(int x, int y, int t);

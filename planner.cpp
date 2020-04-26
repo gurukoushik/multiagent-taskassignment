@@ -247,11 +247,11 @@ static void planner(
 
         // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
         vector<Point> goals_new = Guru_to_Roshan(goalpos_new, numofgoals);
-        vector<int> assignmentVect;
-        for (int i = 0; i < numofagents; i++) {
+        // vector<int> assignmentVect;
+        // for (int i = 0; i < numofagents; i++) {
 
-            assignmentVect.push_back(i);
-        }
+        //     assignmentVect.push_back(i);
+        // }
        
         start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals_new, x_size, y_size));
         printf("unconstrained search done\n");
@@ -270,8 +270,8 @@ static void planner(
 
 
             // no conflicting paths found
-            //int no_conflict = check_conflict(curr, numofagents, conflict);
-            int no_conflict = 1;
+            int no_conflict = check_conflict(curr, numofagents, conflict);
+            // int no_conflict = 1;
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
@@ -341,8 +341,14 @@ static void planner(
                     x.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    x.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], 
+                    x.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, 
                         constraints_per_agent, x_size, y_size, map, collision_thresh));
+
+                    printf("\noutput vector is \n");
+                    for(auto i_pos : x.back().pathVect){
+
+                        printf("point is %d, %d \n", i_pos.x_pos, i_pos.y_pos);
+                    }
                 }
             }
             
@@ -372,8 +378,14 @@ static void planner(
                     y.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    y.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], 
+                    y.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, 
                         constraints_per_agent, x_size, y_size, map, collision_thresh));
+
+                    printf("\noutput vector is \n");
+                    for(auto i_pos : y.back().pathVect){
+
+                        printf("point is %d, %d \n", i_pos.x_pos, i_pos.y_pos);
+                    }
                 }
             }
            
@@ -387,6 +399,7 @@ static void planner(
         }
     }
 
+    printf("\nbefore getting final solution\n");
     vector<Path> set_of_sol = final_node->get_solution();
     if (goals_reached) {
         for (int i = 0; i < numofagents; i++) {

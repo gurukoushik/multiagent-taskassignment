@@ -5,8 +5,8 @@ function runtest(problemfile)
 close all;
 
 %draw the environment
-figure('units','normalized','outerposition',[0 0 1 1]);
-imagesc(envmap'); axis square; colorbar; colormap jet; hold on;
+% figure('units','normalized','outerposition',[0 0 1 1]);
+% imagesc(envmap'); axis square; colorbar; colormap jet; hold on;
 
 %current positions of the target and robot
 time = 0;
@@ -23,7 +23,7 @@ for ii = 1:numofagents
     if (hr ~= -1)
         delete(hr);
     end
-    hr = text(robotpos(ii,1), robotpos(ii,2), 'R', 'Color', 'g', 'FontWeight', 'bold');
+%     hr = text(robotpos(ii,1), robotpos(ii,2), 'R', 'Color', 'g', 'FontWeight', 'bold');
     %hr = scatter(robotpos(ii,1), robotpos(ii,2), 10, 'g', 'filled');
 end
 for ii = 1:numofgoals
@@ -32,7 +32,7 @@ for ii = 1:numofgoals
     if (ht ~= -1)
         delete(ht);
     end
-    ht = text(goalpos(ii,1), goalpos(ii,2), 'T', 'Color', 'm', 'FontWeight', 'bold');
+%     ht = text(goalpos(ii,1), goalpos(ii,2), 'T', 'Color', 'm', 'FontWeight', 'bold');
     %ht = scatter(goalpos(ii,1), goalpos(ii,2), 10, 'm', 'filled');
 end
 

@@ -94,7 +94,8 @@ vector<vector<int>> constrainedassignment(vector<vector<int>> constraintsI, vect
 	return assignment;
 }
 
-double* first_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN, vector<int> &assignmentvect)
+double* first_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, 
+	priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN, vector<int> &assignmentvect)
 {
 	int n = costmatrix.size();
 	static double goalnew[100]; 
@@ -165,7 +166,7 @@ double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>
     {
         assignnew.push_back(P.getgoalindex(i));
     }
-    assignmentvect = assignnew;
+    assignmentvec = assignnew;
     
 	goalsort(goalpos, P.getsolution(), goalnew, n);
 
