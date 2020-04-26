@@ -166,7 +166,7 @@ double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>
     {
         assignnew.push_back(P.getgoalindex(i));
     }
-    assignmentvec = assignnew;
+    assignmentvect = assignnew;
     
 	goalsort(goalpos, P.getsolution(), goalnew, n);
 
