@@ -39,18 +39,29 @@ end
 
 pause(1.0);
 
+% Vector of plot objects to draw trajectory lines
 hr_vec = zeros(numofagents);
 
 while (~all(caught))
     
-    % call robot planner to find what they want to do
+    % Call robot planner to get assignment and actions
     [newrobotpos,assign] = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time);
-
+    
+    % Throw an error if the assignment has invalid size
+    if (size(assign, 1) ~= numofagents)
+        fprintf(1, 'ERROR: invalid assignment, check size in output\n');
+        return;
+    end
+    
+    % Throw an error if the robotpos has invalid size
     if (size(newrobotpos, 1) ~= numofagents  || size(newrobotpos, 2) ~= size(goalpos, 2))
         fprintf(1, 'ERROR: invalid action, check action size in output\n');
         return;
     end
+    
     newrobotpos = cast(newrobotpos, 'like', robotpos);
+    
+    % Throw an error if the action is invalid or leads to a collision
     if (any(newrobotpos(:,1) < 1) || any(newrobotpos(:,1) > size(envmap, 1)) || ...
             any(newrobotpos(:,2) < 1) || any(newrobotpos(:,2) > size(envmap, 2)))
         fprintf(1, 'ERROR: out-of-map robot position commanded\n');
@@ -66,18 +77,46 @@ while (~all(caught))
     time = time + 1;
     prev_robotpos = robotpos;
     robotpos = newrobotpos;
-        
+    
+    % Throw an error if agents collide
+    for pp = 1:numofagents
+        for kk = (pp+1):numofagents
+            if (newrobotpos(pp,1) == newrobotpos(kk,1) && newrobotpos(pp,2) == newrobotpos(kk,2))
+                fprintf(1, 'ERROR: Position Collision Detected.\n');
+            end
+        end
+    end
+    for pp = 1:numofagents
+        for kk = (pp+1):numofagents
+            if (newrobotpos(pp,1) == prev_robotpos(kk,1) && newrobotpos(pp,2) == prev_robotpos(kk,2))
+                if (newrobotpos(kk,1) == prev_robotpos(pp,1) && newrobotpos(kk,2) == prev_robotpos(pp,2))
+                    fprintf(1, 'ERROR: Edge Collision Detected.\n');
+                end
+            end
+        end
+    end
+    for pp = 1:numofagents
+        for kk = (pp+1):numofagents
+            if ((newrobotpos(pp,1) + prev_robotpos(pp,1))/2 == (newrobotpos(kk,1) + prev_robotpos(kk,1))/2)
+                if ((newrobotpos(pp,2) + prev_robotpos(pp,2))/2 == (newrobotpos(kk,2) + prev_robotpos(kk,2))/2)
+                    fprintf(1, 'ERROR: Diagonal Collision Detected.\n');
+                end
+            end
+        end
+    end
+    
     for ii = 1:numofagents
-        % add cost proportional to time spent planning
+        % Add cost and number of moves iteratively
         if(caught(ii) ~= true)
             pathcost(ii) = pathcost(ii) + envmap(robotpos(ii,1), robotpos(ii,2));
             numofmoves(ii) = numofmoves(ii) + 1;
         end
         
+        % Plot the robot position and the trajectory
         hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), 100, 'g', 'filled');
         h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'w');
         
-        % check if target is caught
+        % Check if goal is reached
         thresh = 0.5;
         if (abs(robotpos(ii,1)-goalpos(assign(ii)+1,1)) <= thresh && abs(robotpos(ii,2)-goalpos(assign(ii)+1,2)) <= thresh)
             caught(ii) = true;
@@ -93,7 +132,6 @@ while (~all(caught))
         end
     end
     
-    disp(caught)
 end
 
 fprintf(1, '\nRESULT:\n');
