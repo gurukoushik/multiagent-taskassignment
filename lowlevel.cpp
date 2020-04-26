@@ -93,6 +93,11 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 	printf("entering unconstrainedSearch\n");
 	vector<Path> outPaths;
 
+	printf("assignmentVec inside fn is \n");
+	for(auto i : assignment){
+		printf("%d, ", i);
+	}
+
 	for (int i = 0; i < robotPosnsIn.size(); i++) {
 
 		int goalIdx = assignment[i];
@@ -111,7 +116,8 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 
 		printf("\n before entering while loop \n");
 
-		while (!optPath.empty() && !(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint())) {
+		while (!optPath.empty() && 
+			!(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint())){
 
 			double min_H = numeric_limits<double>::infinity();
 			int finX, finY;
@@ -121,7 +127,7 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 				int newx = optPath.top().getPoint().x_pos + dX[dir1];
 				int newy = optPath.top().getPoint().y_pos + dY[dir1];
 
-				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && min_H > gridmapIn[newy - 1][newx - 1].getH()[goalIdx]) {
+				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && min_H > gridmapIn[newy - 1][newx - 1].getH()[goalIdx]){
 
 					min_H = gridmapIn[newy - 1][newx - 1].getH()[goalIdx];
 					finX = newx; finY = newy;
@@ -137,6 +143,7 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 		outPaths.push_back(tempPath);
 	}
 
+	printf("exit unconstrainedSearch\n");
 	return outPaths;
 }
 
@@ -175,7 +182,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 
 	// printf("before entering while\n");
 	// start while loop for A* expansion
-	while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[goalIdx])) {
+	while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[robotIndex])) {
 
 		Node_time* tempPtr = open_set.top();
 

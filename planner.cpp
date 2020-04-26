@@ -250,6 +250,12 @@ static void planner(
         vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap,  starts);
         double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN, assignmentVect);
         start_node->set_assignment(goalpos_new);
+
+        cout<<"assignmentVec outside fn is "<<endl;
+        for(auto i : assignmentVect){
+            cout<<i<<", ";
+        }
+        cout<<endl;
        // cout << "first assignment done \n" << endl;
 
         // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
@@ -260,7 +266,7 @@ static void planner(
         //     assignmentVect.push_back(i);
         // }
        
-        start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals_new, x_size, y_size));
+        start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals, x_size, y_size));
         //printf("unconstrained search done\n");
         //print_solutions(start_node, numofagents);
         
