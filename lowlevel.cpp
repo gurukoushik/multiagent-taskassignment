@@ -140,107 +140,107 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 }
 
 
-vector<Path> constrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn,
+Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point& robotPosnIn,
 	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int> >& tempConstr,
 	int x_size, int y_size, double* map, int collision_thresh) {
+	
 	printf("\n happening");
-	int numofagents = robotPosnsIn.size();
-	vector<Path> outPathConst;
-	for (int i = 0; i < numofagents; i++) {
+	// int numofagents = robotPosnsIn.size();
+	Path tempPathConst;
 
-		// initialize stuff		
-		int curr_time = 0;
-		int robotposeX = robotPosnsIn[i].x_pos, robotposeY = robotPosnsIn[i].y_pos;
-		unsigned long long index_temp = 0; double g_temp = 0;
-		int x_temp = robotposeX; int y_temp = robotposeY; int t_temp = curr_time;
+	// initialize stuff		
+	int curr_time = 0;
+	int robotposeX = robotPosnsIn[i].x_pos, robotposeY = robotPosnsIn[i].y_pos;
+	unsigned long long index_temp = 0; double g_temp = 0;
+	int x_temp = robotposeX; int y_temp = robotposeY; int t_temp = curr_time;
 
-		int goalIdx = assignment[i];
-		if (goalIdx >= goalsIn.size()) {
+	int goalIdx = goalIn;
+	if (goalIdx >= goalsIn.size()) {
 
-			printf("goalidx is greater than no of goals\n");
-			continue;
-		}
+		printf("goalidx is greater than no of goals\n");
+		continue;
+	}
 
-		// set up hash table
-		unordered_set<unsigned long long> closed_set;
+	// set up hash table
+	unordered_set<unsigned long long> closed_set;
 
-		//robot start state
-		Node_time* rob_start = new Node_time;
-		rob_start->setX(robotposeX); rob_start->setY(robotposeY); rob_start->setT(curr_time);
-		rob_start->setG(0.0);
-		rob_start->setH(gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx]);
+	//robot start state
+	Node_time* rob_start = new Node_time;
+	rob_start->setX(robotposeX); rob_start->setY(robotposeY); rob_start->setT(curr_time);
+	rob_start->setG(0.0);
+	rob_start->setH(gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx]);
 
-		priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
-		open_set.push(rob_start);
+	priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
+	open_set.push(rob_start);
 
-		printf("before entering while\n");
-		// start while loop for A* expansion
-		while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[goalIdx])) {
+	printf("before entering while\n");
+	// start while loop for A* expansion
+	while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[goalIdx])) {
 
-			Node_time* tempPtr = open_set.top();
+		Node_time* tempPtr = open_set.top();
 
-			int x_temp = tempPtr->getPoint().x_pos, y_temp = tempPtr->getPoint().y_pos,
-				t_temp = tempPtr->getTime();
-			double g_temp = tempPtr->getG();
-			tempPtr->expand();
-			closed_set.insert(GetIndex(x_temp, y_temp, t_temp));
-			open_set.pop();
+		int x_temp = tempPtr->getPoint().x_pos, y_temp = tempPtr->getPoint().y_pos,
+			t_temp = tempPtr->getTime();
+		double g_temp = tempPtr->getG();
+		tempPtr->expand();
+		closed_set.insert(GetIndex(x_temp, y_temp, t_temp));
+		open_set.pop();
 
-			for (int dir = 0; dir < numOfDirs; dir++) {
+		for (int dir = 0; dir < numOfDirs; dir++) {
 
-				int newx = x_temp + dX[dir], newy = y_temp + dY[dir];
-				int newt = t_temp + 1;
-				unsigned long long index_temp = GetIndex(newx, newy, newt);
+			int newx = x_temp + dX[dir], newy = y_temp + dY[dir];
+			int newt = t_temp + 1;
+			unsigned long long index_temp = GetIndex(newx, newy, newt);
 
-				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size &&
-					((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] >= 0) &&
-					((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] < collision_thresh) &&
-					(closed_set.find(index_temp) == closed_set.end()) &&
-					CBSOkay(tempConstr, newx, newy, newt, i)) {
+			if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size &&
+				((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] >= 0) &&
+				((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] < collision_thresh) &&
+				(closed_set.find(index_temp) == closed_set.end()) &&
+				CBSOkay(tempConstr, newx, newy, newt, i)) {
 
-					printf("entered if loop\n");
-					Node_time* newNode = new Node_time;
-					newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
-					newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]);
-					newNode->setH(gridmapIn[newy - 1][newx - 1].getH()[goalIdx]);
+				printf("entered if loop\n");
+				Node_time* newNode = new Node_time;
+				newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
+				newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]);
+				newNode->setH(gridmapIn[newy - 1][newx - 1].getH()[goalIdx]);
 
-					newNode->setParent(tempPtr);
-					tempPtr->addSuccessor(newNode);
-					open_set.push(newNode);
-				}
+				newNode->setParent(tempPtr);
+				tempPtr->addSuccessor(newNode);
+				open_set.push(newNode);
 			}
-		}
-
-		// start backtracking
-		if (!open_set.empty()) {
-
-			printf("Target expanded\n");
-
-			Path tempPathConst;
-			tempPathConst.cost = open_set.top()->getG();
-
-			vector<Point> backtrack;
-
-			Node_time* traverse = open_set.top();
-
-			while (traverse->getParent() != nullptr) {
-
-				double min_G = numeric_limits<double>::infinity();
-
-				int x_back = traverse->getPoint().x_pos, y_back = traverse->getPoint().y_pos, t_back = traverse->getTime();
-				Point point_back(traverse->getPoint().x_pos, traverse->getPoint().y_pos);
-				printf("state while backtracking is %d %d %d \n", x_back, y_back, t_back);
-
-				traverse = traverse->getParent();
-
-				backtrack.push_back(point_back);
-			}
-
-			tempPathConst.pathVect = backtrack;
-			outPathConst.push_back(tempPathConst);
 		}
 	}
+
+	// start backtracking
+	if (!open_set.empty()) {
+
+		printf("Target expanded\n");
+		
+		tempPathConst.cost = open_set.top()->getG();
+
+		vector<Point> backtrack;
+
+		Node_time* traverse = open_set.top();
+
+		while (traverse->getParent() != nullptr) {
+
+			double min_G = numeric_limits<double>::infinity();
+
+			int x_back = traverse->getPoint().x_pos, y_back = traverse->getPoint().y_pos, t_back = traverse->getTime();
+			Point point_back(traverse->getPoint().x_pos, traverse->getPoint().y_pos);
+			printf("state while backtracking is %d %d %d \n", x_back, y_back, t_back);
+
+			traverse = traverse->getParent();
+
+			backtrack.push_back(point_back);
+		}
+
+		tempPathConst.pathVect = backtrack;
+	}
+
+	return tempPathConst;
 }
+
 
 
 

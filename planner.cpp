@@ -231,7 +231,7 @@ static void planner(
         State_map state_init_map(numofgoals);
         vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
         backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
-        
+        vector<int> assignmentVect;
         
 
         priority_queue<Node*, vector<Node*>, min_heap> OPEN;
@@ -239,9 +239,9 @@ static void planner(
         int goal_reached = 0;
         Node* start_node = new Node(NULL, 1);
 
-        // call to Guru's initial assignment function. Should return goal positions of type double*. 
+        // call to Guru's initial assignment function. Should return goal positions of type double*.         
         vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap,  starts);
-        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN);
+        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN, assignmentVect);
         start_node->set_assignment(goalpos_new);
         printf("first assignment done \n");
 
@@ -289,14 +289,15 @@ static void planner(
                 // In case there are changes in the map like sudden addition of obstacles. Recompute heuristics by calling Roshan's functions. 
                 // In this case we'd also need to update the cost of the map.
                 // More on this update later
-                State_map state_init_map(numofgoals);
-                vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
-                backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh); 
+
+                // State_map state_init_map(numofgoals);
+                // vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
+                // backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh); 
                
               
                 // call to Guru's new assignment function. Should return goal positions of type double*. Should input updated gridmap if the map changes 
                 vector<vector<double>> cost_matrix_new = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
-                double* goalpos_new = next_assignment(robotpos, goalpos, cost_matrix_new, ASG_OPEN);
+                double* goalpos_new = next_assignment(robotpos, goalpos, cost_matrix_new, ASG_OPEN, assignmentVect);
 
                 new_node->set_assignment(goalpos_new);
                 printf("new assignment  done\n");
@@ -340,7 +341,8 @@ static void planner(
                     x.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    x.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], constraints_per_agent, x_size, y_size, map, collision_thresh))
+                    x.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], 
+                        constraints_per_agent, x_size, y_size, map, collision_thresh));
                 }
             }
             
@@ -370,7 +372,8 @@ static void planner(
                     y.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    y.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], constraints_per_agent, x_size, y_size, map, collision_thresh))
+                    y.push_back(constrainedSearch(gridmap, starts[i], assignmentVect, goals_child[i], 
+                        constraints_per_agent, x_size, y_size, map, collision_thresh));
                 }
             }
            
