@@ -234,10 +234,11 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 
 			backtrack.push_back(point_back);
 		}
-
+		backtrack.push_back(robotPosnIn);
+		std::reverse(backtrack.begin(), backtrack.end());
 		tempPathConst.pathVect = backtrack;
 	}
-
+	
 	return tempPathConst;
 }
 
