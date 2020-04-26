@@ -38,18 +38,17 @@ end
 
 pause(1.0);
 
+hr_vec = zeros(numofagents);
 % robot can take at most as many steps as target takes
 while (~all(caught))
     
     % call robot planner to find what they want to do
-    
     newrobotpos = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time);
     
     if (size(newrobotpos, 1) ~= numofagents  || size(newrobotpos, 2) ~= size(goalpos, 2))
         fprintf(1, 'ERROR: invalid action, check action size in output\n');
         return;
     end
-    
     newrobotpos = cast(newrobotpos, 'like', robotpos);
     if (any(newrobotpos(:,1) < 1) || any(newrobotpos(:,1) > size(envmap, 1)) || ...
             any(newrobotpos(:,2) < 1) || any(newrobotpos(:,2) > size(envmap, 2)))
@@ -64,8 +63,9 @@ while (~all(caught))
     end
     
     time = time + 1;
+    prev_robotpos = robotpos;
     robotpos = newrobotpos;
-
+        
     for ii = 1:numofagents
         % add cost proportional to time spent planning
         if(caught(ii) ~= true)
@@ -73,21 +73,24 @@ while (~all(caught))
             numofmoves(ii) = numofmoves(ii) + 1;
         end
         
-        % draw the positions
-        hr = -1;
-        if (hr ~= -1)
-            delete(hr);
-        end
-        %hr = text(robotpos(ii,1), robotpos(ii,2), 'O', 'Color', 'g', 'FontWeight', 'bold');
-        hr = scatter(robotpos(ii,1), robotpos(ii,2), 30, 'g', 'filled');
-
+        hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), 100, 'g', 'filled');
+        h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'w');
+        
         % check if target is caught
         thresh = 0.5;
         if (abs(robotpos(ii,1)-goalpos(ii,1)) <= thresh && abs(robotpos(ii,2)-goalpos(ii,2)) <= thresh)
             caught(ii) = true;
         end
     end
+    
     pause(0.5);
+    
+    % delete the positions after every iteration
+    if (~all(caught))
+        for jj = 1:numofagents
+                delete(hr_vec(jj));
+        end
+    end
 end
 
 fprintf(1, '\nRESULT:\n');
