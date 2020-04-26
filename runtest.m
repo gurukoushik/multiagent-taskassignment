@@ -1,50 +1,51 @@
 function runtest(problemfile)
 
+% Read the map text file and store the variables
 [numofagents, numofgoals, mapdims , C, robotstart, goalpose, envmap] = readproblem(problemfile);
 
+% Close all previous windows
 close all;
 
-%draw the environment
+% Draw the Environment
 figure('units','normalized','outerposition',[0 0 1 1]);
 imagesc(envmap'); axis square; colorbar; colormap jet; hold on;
 
-%current positions of the target and robot
+% Starting Positions of the Robot and Goal
 time = 0;
 robotpos = robotstart;
 goalpos = goalpose;
 
+% Logging required metrics for each agent
 numofmoves = zeros(1,numofagents);
 caught = false(1,numofgoals);
 pathcost = zeros(1,numofagents);
 
+% Draw the agent's starting positions
 for ii = 1:numofagents
     hr = -1;
-    %draw the agent positions
     if (hr ~= -1)
         delete(hr);
     end
     hr = text(robotpos(ii,1), robotpos(ii,2), 'R', 'Color', 'g', 'FontWeight', 'bold');
-    %hr = scatter(robotpos(ii,1), robotpos(ii,2), 10, 'g', 'filled');
 end
+% Draw the agent's goal positions
 for ii = 1:numofgoals
     ht = -1;
-    %draw the goal positions
     if (ht ~= -1)
         delete(ht);
     end
     ht = text(goalpos(ii,1), goalpos(ii,2), 'T', 'Color', 'm', 'FontWeight', 'bold');
-    %ht = scatter(goalpos(ii,1), goalpos(ii,2), 10, 'm', 'filled');
 end
 
 pause(1.0);
 
 hr_vec = zeros(numofagents);
-% robot can take at most as many steps as target takes
+
 while (~all(caught))
     
     % call robot planner to find what they want to do
-    newrobotpos = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time);
-    
+    [newrobotpos,assign] = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time);
+
     if (size(newrobotpos, 1) ~= numofagents  || size(newrobotpos, 2) ~= size(goalpos, 2))
         fprintf(1, 'ERROR: invalid action, check action size in output\n');
         return;
@@ -78,19 +79,21 @@ while (~all(caught))
         
         % check if target is caught
         thresh = 0.5;
-        if (abs(robotpos(ii,1)-goalpos(ii,1)) <= thresh && abs(robotpos(ii,2)-goalpos(ii,2)) <= thresh)
+        if (abs(robotpos(ii,1)-goalpos(assign(ii)+1,1)) <= thresh && abs(robotpos(ii,2)-goalpos(assign(ii)+1,2)) <= thresh)
             caught(ii) = true;
         end
     end
     
-    pause(0.5);
+    pause(2);
     
-    % delete the positions after every iteration
-    if (~all(caught))
-        for jj = 1:numofagents
-                delete(hr_vec(jj));
+    % Delete the agent position plot after every iteration
+    for jj = 1:numofagents
+        if (caught(jj)==0)
+            delete(hr_vec(jj));
         end
     end
+    
+    disp(caught)
 end
 
 fprintf(1, '\nRESULT:\n');
