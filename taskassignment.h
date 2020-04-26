@@ -94,26 +94,32 @@ vector<vector<int>> constrainedassignment(vector<vector<int>> constraintsI, vect
 	return assignment;
 }
 
-double* first_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
+double* first_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN, vector<int> &assignmentvect)
 {
 	int n = costmatrix.size();
 	static double goalnew[100]; 
-
+    vector<int> assignnew;
+    
 	ASG R;
 	R.setsolution(constrainedassignment(R.getconstraintsI(), R.getconstraintsO(), costmatrix));
 	R.setcost(R.costofassignment(costmatrix));
 	ASG_OPEN.push(R);
 
+    for(int i = 0; i < n; i++)
+    {
+        assignnew.push_back(R.getgoalindex(i));
+    }
+    assignmentvect = assignnew;
 	goalsort(goalpos, R.getsolution(), goalnew, n);
 
 	return goalnew;
 }
 
-double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
+double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN, vector<int> assignmentvec)
 {
 	int n = costmatrix.size();
 	static double goalnew[100]; 
-
+    vector<int> assignnew;
 	// When ASG_OPEN is empty and no next assignment is possible
 	if(ASG_OPEN.empty())
 	{
@@ -154,7 +160,13 @@ double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>
 			}
 		}
 	}
-
+    
+    for(int i = 0; i < n; i++)
+    {
+        assignnew.push_back(P.getgoalindex(i));
+    }
+    assignmentvect = assignnew;
+    
 	goalsort(goalpos, P.getsolution(), goalnew, n);
 
 	return goalnew;
