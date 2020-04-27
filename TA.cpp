@@ -7,7 +7,7 @@ int main()
 	double robotpos[] = {1,2,3,4,5,6};
 	double goalpos[] = {4,3,2,5,6,1};
 	double goalpos1[] = {4,3,2,5,6,1};
-	vector<vector<int>> cost = {{1,2,3},{2,4,6},{3,6,9}};
+	vector<vector<double>> cost = {{1,2,3},{2,4,6},{3,6,9}};
 	vector<vector<int>> ass = {{1,0,0},{0,0,1},{0,1,0}};
 
 	double* goalnew = first_assignment(robotpos,goalpos,cost,ASG_OPEN);

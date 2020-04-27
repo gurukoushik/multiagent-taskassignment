@@ -1,7 +1,7 @@
 
 /*=================================================================
  *
- * planner.cpp
+ * pm.cpp
  *
  *=================================================================*/
 
@@ -37,7 +37,7 @@ using namespace std;
 
 /* Output Arguments */
 #define	ACTION_OUT              plhs[0]
-
+#define	ASSIGN                  plhs[1]
 /* access to the map is shifted to account for 0-based indexing in the map,
 whereas 1-based indexing in matlab (so, robotpose and goalpose are 1-indexed) */
 #define GETMAPINDEX(X, Y, XSIZE, YSIZE) ((Y-1)*XSIZE + (X-1))
@@ -66,6 +66,7 @@ private:
     vector <tuple<int, Point, int>> constraints;
     vector <Path> solutions;
     double* assignment;
+    vector<int> assignmentVect;
 
 public:
     Node() {}
@@ -79,6 +80,9 @@ public:
 
     void set_cost(double c) { cost = c; }
     double get_cost() { return cost; }
+
+    void set_assignmentvect(vector<int> a) { assignmentVect = a; }
+    vector<int> get_assignmentvect() { return assignmentVect; }
 
     void set_root(bool r) { root = r; }
     bool get_root() { return root; }
@@ -104,22 +108,32 @@ struct min_heap {
 };
 
 
-bool check_conflict(Node* node, int numofagents, tuple<int, int, Point, int> &conflict) {
+bool check_conflict(Node* node, int numofagents, tuple<int,  Point, int> &conflict1, tuple<int,  Point, int>& conflict2) {
     vector<Path> sol = node->get_solution();
     for (int i = 0; i < numofagents; i++)
     {
         for (int j = i+1; j < numofagents ; j++) {
-            int m;
+            int m, m1, m2;
             vector<Point> agent1 = sol[i].pathVect;
             vector<Point> agent2 = sol[j].pathVect;
             m = min(agent1.size(), agent2.size());
-            
+            m1 = agent1.size();
+            m2 = agent2.size();
             for (int k = 0; k < m; k++) {
-            
+                   
                 if (agent1[k] == agent2[k]) {
                    
-                    conflict = make_tuple(i, j, agent1[k], k);
+                    conflict1 = make_tuple(i, agent1[k], k);
+                    conflict2 = make_tuple(j, agent1[k], k);
                     return 0;
+                }
+                if (k > 0) {
+                    if ((agent1[k].x_pos - agent2[k].x_pos + agent1[k].y_pos - agent2[k].y_pos) + (agent1[k - 1].x_pos - agent2[k - 1].x_pos + agent1[k - 1].y_pos - agent2[k - 1].y_pos) == 0) {
+                        conflict1 = make_tuple(i, agent1[k], k);
+                        conflict2 = make_tuple(j, agent2[k], k);
+                        return 0;
+                    }
+
                 }
 
             }
@@ -150,7 +164,10 @@ vector<vector<double>> gridmap_to_costmatrix(int numofagents, int numofgoals,vec
 
         vector<double> tempTemp;
         for(int j=0; j<numofgoals;j++){
-            tempTemp.push_back( gridmap[robotPosns[i].y_pos - 1][robotPosns[i].x_pos - 1].getH()[j] );}
+            tempTemp.push_back(gridmap[robotPosns[i].y_pos - 1][robotPosns[i].x_pos - 1].getH()[j]);
+          
+        }
+        
         temp.push_back(tempTemp);
     }
     return temp;
@@ -179,7 +196,16 @@ void print_solutions(Node* start_node, int numofagents) {
     }
 }
 
+int equal_vectors(vector<int> pass, vector<int> newvec) {
+    for (int i = 0; i < pass.size(); i++) {
+        if (pass[i] != newvec[i]) {
+            return 0;
+        }
+    }
 
+
+    return 1;
+}
 
 void print_dble(double* goalpos_new, int numofagents) {
     for (int i = 0; i < numofagents; i++) {
@@ -202,7 +228,7 @@ void print_constraint(vector<tuple<int, Point, int>> con, int numofagents) {
     }
   
 }
-
+ 
 
 static void planner(
         int numofagents,
@@ -214,7 +240,8 @@ static void planner(
         double* goalpos,
         double*	map,
         int curr_time,
-        double* action_ptr
+        double* action_ptr,
+        double* assign
         )
 {   
 
@@ -226,123 +253,116 @@ static void planner(
     int goals_reached = 0;
 
     if (curr_time == 0) {
+        Node* initial_node = new Node(NULL, 1);
+        priority_queue<Node*, vector<Node*>, min_heap> OPEN;
+        priority_queue<ASG, vector<ASG>, ASG_Comparator> ASG_OPEN;
 
         //  Defines start and goal position for Roshan's code
         vector<Point> goals = Guru_to_Roshan(goalpos, numofagents);
         vector<Point> starts = Guru_to_Roshan(robotpos, numofagents);
-
-
         //  For Guru's part, start and goals are still defined as arrays - double*
 
-        //  Define gridmap for Dijkstra expansions
+        vector<vector<int>> PAST_ASSIGNMENTS;
+        //  Define gridmap for heuristic calculation for Dijkstra expansions and cost matrix
         State_map state_init_map(numofgoals);
         vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
         backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
-        vector<int> assignmentVect;
-        
+        vector<int> assignmentVectstart;
+        vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
 
-        priority_queue<Node*, vector<Node*>, min_heap> OPEN;
-        priority_queue<ASG, vector<ASG>, ASG_Comparator> ASG_OPEN;
         
-        Node* start_node = new Node(NULL, 1);
-
-        // call to Guru's initial assignment function. Should return goal positions of type double*.         
-        vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap,  starts);
-        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN, assignmentVect);
+        Node* start_node = new Node(initial_node, true);
+        // get first assignment call to Guru's initial assignment function. Should return goal positions of type double*.         
+        double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN, assignmentVectstart);
+        PAST_ASSIGNMENTS.push_back(assignmentVectstart);
         start_node->set_assignment(goalpos_new);
-
-        cout<<"assignmentVec outside fn is "<<endl;
-        for(auto i : assignmentVect){
-            cout<<i<<", ";
-        }
-        cout<<endl;
-       // cout << "first assignment done \n" << endl;
-
-        // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
-        vector<Point> goals_new = Guru_to_Roshan(goalpos_new, numofgoals);
-        // vector<int> assignmentVect;
-        // for (int i = 0; i < numofagents; i++) {
-
-        //     assignmentVect.push_back(i);
-        // }
-       
-        start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals, x_size, y_size));
-        //printf("unconstrained search done\n");
-        //print_solutions(start_node, numofagents);
+        start_node->set_assignmentvect(assignmentVectstart);
         
-        
+        start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVectstart, goals, x_size, y_size));
         start_node->set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
 
+        cout << "done" << endl;
+              
+
+        //printf("unconstrained search done\n");
+        //print_solutions(start_node, numofagents);
         
         while (!OPEN.empty() ) {
             
             Node* curr = OPEN.top();
             OPEN.pop();
-            tuple<int, int, Point, int> conflict;
+            tuple<int, Point, int> conflict1;
+            tuple<int, Point, int> conflict2;
 
-
-            // no conflicting paths found
-            int no_conflict = check_conflict(curr, numofagents, conflict);
+            vector<int> assignmentVect = curr->get_assignmentvect();
+            int no_conflict = check_conflict(curr, numofagents, conflict1, conflict2);
             
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
-                //print_solutions(final_node, numofagents);
+                printf("FINAL COST is %f", final_node->get_cost());
+                print_solutions(final_node, numofagents);
                 printf("\n goals reached\n");
                 break;
             }
-            //printf("conflict exists\n");
-            /*
-             //create root node of new tree
-            if (curr->get_root()) {
-                printf("Starting new tree\n");
-                Node* new_node = new Node(NULL, 1);
+            
+           
+            //create root node of new tree
+            if (curr->get_root() ) {
                 
+                printf("Trying new assignment \n");
+                Node* new_node = new Node(initial_node, true);
 
-                // In case there are changes in the map like sudden addition of obstacles. Recompute heuristics by calling Roshan's functions. 
-                // In this case we'd also need to update the cost of the map.
-                // More on this update later
-
-                // State_map state_init_map(numofgoals);
-                // vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
-                // backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh); 
-               
-              
-                // call to Guru's new assignment function. Should return goal positions of type double*. Should input updated gridmap if the map changes 
+                vector<int> new_assignmentVect = assignmentVect;
                 vector<vector<double>> cost_matrix_new = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
-                double* goalpos_new = next_assignment(robotpos, goalpos, cost_matrix_new, ASG_OPEN, assignmentVect);
+                vector<Path>sol = curr->get_solution();
 
-                new_node->set_assignment(goalpos_new);
-                printf("new assignment  done\n");
-                // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
-                vector<Point> goals_new_tree = Guru_to_Roshan(goalpos_new, numofgoals);
-                new_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVect, goals_new_tree, x_size, y_size)); 
+                
+                for (int i = 0; i < numofagents; i++) {
+                    cost_matrix_new[new_assignmentVect[i]][i] = sol[i].cost;
 
+                }
 
-
-                printf("unconstrained search for new tree done\n");
-                print_solutions(new_node, numofagents);
-                new_node->set_cost(get_SIC(new_node, numofagents));
-                OPEN.push(new_node);
+                
+                
+                double* goalpos_new = next_assignment(robotpos, goalpos, cost_matrix_new, ASG_OPEN, new_assignmentVect);
+               
+                int m = 0;
+                for (int i = 0; i < PAST_ASSIGNMENTS.size(); i++) {
+                    if (equal_vectors(PAST_ASSIGNMENTS[i], new_assignmentVect)) {
+                        m = 1;
+                        break;
+                    }
+                    
+                }
+                if (m = 0){
+                    printf("new_assignment happened \n");
+                    PAST_ASSIGNMENTS.push_back(assignmentVectstart);
+                
+                    new_node->set_assignment(goalpos_new);
+                    new_node->set_assignmentvect(new_assignmentVect);
+                    new_node->set_solution(unconstrainedSearch(gridmap, starts, new_assignmentVect, goals, x_size, y_size)); 
+                    new_node->set_cost(get_SIC(new_node, numofagents));
+                    OPEN.push(new_node);
+                }
             }
-            */
-
-            //printf("children of parent tree\n");
-            // redefinition of goal for Roshan's code from double* to vector<Point>
+            
+            
+            
             double* goalpos_child = curr->get_assignment();
             vector<Point> goals_child = Guru_to_Roshan(goalpos_child, numofgoals);
+
             
 
-            // create child node for conflicting agent 1
-            Node* child_node1 = new Node(curr, false);
-           
-            child_node1->set_constraints(curr->get_constraints());
-            child_node1->push_constraints(get<0>(conflict), get<2>(conflict), get<3>(conflict));
-            //print_constraint(child_node1->get_constraints(), numofagents);
-            child_node1->set_assignment(goalpos_child);
-            // call to Roshan's low level search with a vector of constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
 
+
+            Node* child_node1 = new Node(curr, false);
+            child_node1->set_constraints(curr->get_constraints());
+            child_node1->push_constraints(get<0>(conflict1), get<1>(conflict1), get<2>(conflict1));
+            child_node1->set_assignment(goalpos_child);
+            child_node1->set_assignmentvect(assignmentVect);
+            
             vector<Path> x;
             vector<tuple<int, Point, int>> cd1_constraints = child_node1->get_constraints();
             for (int i = 0; i < numofagents; i++) {
@@ -356,35 +376,30 @@ static void planner(
                     x.push_back(curr->get_solution()[i]);
                 }
                 else {
-                    x.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, 
-                        constraints_per_agent, x_size, y_size, map, collision_thresh));
+                    x.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, constraints_per_agent, x_size, y_size, map, collision_thresh));
 
-                    
-                    //printf("Start for constrined search %d %d", starts[i].x_pos, starts[i].y_pos);
                 }
             }
-            
-           
+
             child_node1->set_solution(x);
-            
             child_node1->set_cost(get_SIC(child_node1, numofagents));
-            //printf("COST IS %f \n\n\n", child_node1->get_cost());
             OPEN.push(child_node1);
             
 
            
             // create child node for conflicting agent 2
             Node* child_node2 = new Node(curr, false);
-
             child_node2->set_constraints(curr->get_constraints());
-            child_node2->push_constraints(get<1>(conflict), get<2>(conflict), get<3>(conflict));
+            child_node2->push_constraints(get<0>(conflict2), get<1>(conflict2), get<2>(conflict2));
             child_node2->set_assignment(goalpos_child);
+            child_node2->set_assignmentvect(assignmentVect);
+
             vector<Path> y;
-            vector<tuple<int, Point, int>> cd2_constraints = child_node1->get_constraints();
+            vector<tuple<int, Point, int>> cd2_constraints = child_node2->get_constraints();
             for (int i = 0; i < numofagents; i++) {
                 vector<tuple<int, Point, int>> constraints_per_agent;
-                for (int j = 0; j < cd1_constraints.size(); j++) {
-                    if (i == get<0>(cd1_constraints[j])) {
+                for (int j = 0; j < cd2_constraints.size(); j++) {
+                    if (i == get<0>(cd2_constraints[j])) {
                         constraints_per_agent.push_back(cd2_constraints[j]);
                     }
                 }
@@ -397,21 +412,24 @@ static void planner(
 
                 }
             }
-            //print_constraint(child_node2->get_constraints(), numofagents);
             
-            // call to Roshan's low level search with a vector of constraints. Should return data structure of type: vector <pair<double, vector<Point>>>
             child_node2->set_solution(y);      
-            
             child_node2->set_cost(get_SIC(child_node2, numofagents));
-            //printf("\n COST IS %f \n\n\n", child_node2->get_cost());
             OPEN.push(child_node2);
             
           
         }
+       
     }
 
     
     vector<Path> set_of_sol = final_node->get_solution();
+    vector<int> assg = final_node->get_assignmentvect();
+    for (int i = 0; i < numofagents; i++)
+    {
+        assign[i] = assg[i];
+    }
+   
     goals_reached = 1;
     //print_solutions(final_node, numofagents);
     if (goals_reached) {
@@ -439,69 +457,74 @@ static void planner(
 // 4th is an integer C, the collision threshold for the map
 // plhs should contain output parameters (1):
 // 1st is a row vector <dx,dy> which corresponds to the action that the robot should make
-void mexFunction( int nlhs, mxArray *plhs[],
-        int nrhs, const mxArray*prhs[] )
+void mexFunction(int nlhs, mxArray* plhs[],
+    int nrhs, const mxArray* prhs[])
 {
     /* Check for proper number of arguments */
     if (nrhs != 8) {
-        mexErrMsgIdAndTxt( "MATLAB:planner:invalidNumInputs",
-                "Eight input arguments required.");
-    } else if (nlhs != 1) {
-        mexErrMsgIdAndTxt( "MATLAB:planner:maxlhs",
-                "One output argument required.");
+        mexErrMsgIdAndTxt("MATLAB:planner:invalidNumInputs",
+            "Eight input arguments required.");
     }
-    
-    int numofagents = (int) mxGetScalar(NUM_OF_AGENTS);
-    int numofgoals = (int) mxGetScalar(NUM_OF_GOALS);
-    
+    else if (nlhs != 2) {
+        mexErrMsgIdAndTxt("MATLAB:planner:maxlhs",
+            "One output argument required.");
+    }
+
+    int numofagents = (int)mxGetScalar(NUM_OF_AGENTS);
+    int numofgoals = (int)mxGetScalar(NUM_OF_GOALS);
+
     /* get the dimensions of the map*/
     int dim_M = mxGetM(MAP_DIM);
     int dim_N = mxGetN(MAP_DIM);
-    if(dim_M != 1 || dim_N != 2)
+    if (dim_M != 1 || dim_N != 2)
     {
-        mexErrMsgIdAndTxt( "MATLAB:planner:invalidmapdimensions",
-                "mapdimensions vector should be 1 by 2.");
+        mexErrMsgIdAndTxt("MATLAB:planner:invalidmapdimensions",
+            "mapdimensions vector should be 1 by 2.");
     }
     double* mapdims = mxGetPr(MAP_DIM);
     int x_size = (int)mapdims[0];
     int y_size = (int)mapdims[1];
-    
+
     /* get the dimensions of the map and the map matrix itself*/
     double* map = mxGetPr(MAP_IN);
-    
+
     /* Get collision threshold for problem */
-    int collision_thresh = (int) mxGetScalar(COLLISION_THRESH);
-    
+    int collision_thresh = (int)mxGetScalar(COLLISION_THRESH);
+
     /* get the current timestep the target is at*/
     int curr_time = mxGetScalar(CURR_TIME);
-    
+
     /* get the current robot pose*/
     int robotpose_M = mxGetM(ROBOT_POS);
     int robotpose_N = mxGetN(ROBOT_POS);
-    
-    if(robotpose_M != numofagents || robotpose_N != 2)
+
+    if (robotpose_M != numofagents || robotpose_N != 2)
     {
-        mexErrMsgIdAndTxt( "MATLAB:planner:invalidrobotpose",
-                "robotpose vector should be NUMOFAGENTS by 2 matrix.");
+        mexErrMsgIdAndTxt("MATLAB:planner:invalidrobotpose",
+            "robotpose vector should be NUMOFAGENTS by 2 matrix.");
     }
     double* robotpose = mxGetPr(ROBOT_POS);
-    
+
     /* get the goal pose*/
     int goalpose_M = mxGetM(GOAL_POS);
     int goalpose_N = mxGetN(GOAL_POS);
-    
-    if(goalpose_M != numofgoals || goalpose_N != 2)
+
+    if (goalpose_M != numofgoals || goalpose_N != 2)
     {
-        mexErrMsgIdAndTxt( "MATLAB:planner:invalidgoalpose",
-                "goalpose vector should be NUMOFGOALS by 2 matrix.");
+        mexErrMsgIdAndTxt("MATLAB:planner:invalidgoalpose",
+            "goalpose vector should be NUMOFGOALS by 2 matrix.");
     }
     double* goalpose = mxGetPr(GOAL_POS);
-    
-    /* Create a matrix for the return action */ 
-    ACTION_OUT = mxCreateNumericMatrix( (mwSize)numofagents, (mwSize)2, mxDOUBLE_CLASS, mxREAL); 
-    double* action_ptr = (double*) mxGetData(ACTION_OUT);
-    
+
+    /* Create a matrix for the return action */
+    ACTION_OUT = mxCreateNumericMatrix((mwSize)numofagents, (mwSize)2, mxDOUBLE_CLASS, mxREAL);
+    double* action_ptr = (double*)mxGetData(ACTION_OUT);
+
+    /* Create a matrix for the return assignment */
+    ASSIGN = mxCreateNumericMatrix((mwSize)numofagents, (mwSize)1, mxDOUBLE_CLASS, mxREAL);
+    double* assign = (double*)mxGetData(ASSIGN);
+
     /* Do the actual planning in a subroutine */
-    planner(numofagents, numofgoals, x_size, y_size, collision_thresh, robotpose, goalpose, map, curr_time, &action_ptr[0]);
+    planner(numofagents, numofgoals, x_size, y_size, collision_thresh, robotpose, goalpose, map, curr_time, &action_ptr[0], &assign[0]);
     return;
 }
