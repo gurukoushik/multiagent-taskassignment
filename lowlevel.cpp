@@ -94,7 +94,9 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 	vector<Path> outPaths;
 
 	printf("assignmentVec inside fn is \n");
-	for (auto i : assignment) {
+
+	for(auto i : assignment){
+
 		printf("%d, ", i);
 	}
 
@@ -116,8 +118,8 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 
 		printf("\n before entering while loop \n");
 
-		while (!optPath.empty() &&
-			!(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint())) {
+		while (!optPath.empty() && 
+			!(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint())){
 
 			double min_H = numeric_limits<double>::infinity();
 			int finX, finY;
@@ -127,7 +129,7 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 				int newx = optPath.top().getPoint().x_pos + dX[dir1];
 				int newy = optPath.top().getPoint().y_pos + dY[dir1];
 
-				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && min_H > gridmapIn[newy - 1][newx - 1].getH()[goalIdx]) {
+				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && min_H > gridmapIn[newy - 1][newx - 1].getH()[goalIdx]){
 
 					min_H = gridmapIn[newy - 1][newx - 1].getH()[goalIdx];
 					finX = newx; finY = newy;
@@ -137,11 +139,16 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 			optPath.push(gridmapIn[finY - 1][finX - 1]);
 			tempPath.pathVect.push_back(gridmapIn[finY - 1][finX - 1].getPoint());
 		}
+		tempPath.pathVect.push_back(gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint());
+
+		// if need to invert vector
+		reverse(tempPath.pathVect.begin(), tempPath.pathVect.end());
+
 		// printf("cost of path that goes from robot %d to goal %d is ", i, goalIdx);
 		// printf("%lf\n", gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx]);
 		tempPath.cost = gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx];
 		outPaths.push_back(tempPath);
-	}
+	}	
 
 	printf("exit unconstrainedSearch\n");
 	return outPaths;
