@@ -199,6 +199,7 @@ void print_solutions(Node* start_node, int numofagents) {
 int equal_vectors(vector<int> pass, vector<int> newvec) {
     for (int i = 0; i < pass.size(); i++) {
         if (pass[i] != newvec[i]) {
+            printf("unequal %d %d", pass[i], newvec[i]);
             return 0;
         }
     }
@@ -309,6 +310,7 @@ static void planner(
        
        
         cout << endl;
+       
         
         while (!OPEN.empty() ) {
             
@@ -347,20 +349,25 @@ static void planner(
 
                 }
 
-                
+              
                 
                 double* goalpos_new = next_assignment(robotpos, goalpos, cost_matrix_new, ASG_OPEN, new_assignmentVect);
-               
+                printf("New Assignment vector");
+                for (int i = 0; i < new_assignmentVect.size(); i++) {
+                    printf("%d", new_assignmentVect[i]);
+                }
+                
                 int m = 0;
                 for (int i = 0; i < PAST_ASSIGNMENTS.size(); i++) {
                     if (equal_vectors(PAST_ASSIGNMENTS[i], new_assignmentVect)) {
+                       
                         m = 1;
                         break;
                     }
                     
                 }
-                if (m = 0){
-                    printf("new_assignment happened \n");
+                if (m == 0){
+                    printf("\nDifferent from old assignment \n");
                     PAST_ASSIGNMENTS.push_back(assignmentVectstart);
                 
                     new_node->set_assignment(goalpos_new);
@@ -370,6 +377,9 @@ static void planner(
                     new_node->set_solution(z); 
                     new_node->set_cost(get_SIC(new_node, numofagents));
                     OPEN.push(new_node);
+                }
+                else {
+                    printf("\nSame as old assignment");
                 }
             }
             
