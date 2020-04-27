@@ -253,6 +253,16 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 		tempPathConst.pathVect = backtrack;
 	}
 
+	while(!open_set.empty()){
+
+		auto tempPtr0 = open_set.top();
+		if(tempPtr0!=nullptr)
+			delete tempPtr0;
+		open_set.pop();
+	}
+
+	
+
 	return tempPathConst;
 }
 
