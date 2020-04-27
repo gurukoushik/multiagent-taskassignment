@@ -139,10 +139,10 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 			optPath.push(gridmapIn[finY - 1][finX - 1]);
 			tempPath.pathVect.push_back(gridmapIn[finY - 1][finX - 1].getPoint());
 		}
-		tempPath.pathVect.push_back(gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint());
+		//tempPath.pathVect.push_back(gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint());
 
 		// if need to invert vector
-		reverse(tempPath.pathVect.begin(), tempPath.pathVect.end());
+		//reverse(tempPath.pathVect.begin(), tempPath.pathVect.end());
 
 		// printf("cost of path that goes from robot %d to goal %d is ", i, goalIdx);
 		// printf("%lf\n", gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx]);

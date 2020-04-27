@@ -141,7 +141,7 @@ bool check_conflict(Node* node, int numofagents, tuple<int,  Point, int> &confli
         }
 
     }
-    printf("no conflict");
+    
     return 1;
 }
 
@@ -228,7 +228,24 @@ void print_constraint(vector<tuple<int, Point, int>> con, int numofagents) {
     }
   
 }
- 
+void lengthen_solution(vector<Path> &y, int numofagents) {
+    int j = 0;
+    for (int i = 0; i < numofagents; i++) {
+        if (y[i].pathVect.size() > j) {
+            j = y[i].pathVect.size();
+        }
+        
+    }
+    for (int i = 0; i < numofagents; i++) {
+        int m = y[i].pathVect.size();
+        Point last = y[i].pathVect[m - 1];
+        while (y[i].pathVect.size() < j) {
+            y[i].pathVect.push_back(last);
+        }
+
+    }
+
+}
 
 static void planner(
         int numofagents,
@@ -242,6 +259,7 @@ static void planner(
         int curr_time,
         double* action_ptr,
         double* assign
+        
         )
 {   
 
@@ -253,6 +271,7 @@ static void planner(
     int goals_reached = 0;
 
     if (curr_time == 0) {
+        cout << endl;
         Node* initial_node = new Node(NULL, 1);
         priority_queue<Node*, vector<Node*>, min_heap> OPEN;
         priority_queue<ASG, vector<ASG>, ASG_Comparator> ASG_OPEN;
@@ -277,16 +296,19 @@ static void planner(
         PAST_ASSIGNMENTS.push_back(assignmentVectstart);
         start_node->set_assignment(goalpos_new);
         start_node->set_assignmentvect(assignmentVectstart);
-        
-        start_node->set_solution(unconstrainedSearch(gridmap, starts, assignmentVectstart, goals, x_size, y_size));
+        vector<Path> s = unconstrainedSearch(gridmap, starts, assignmentVectstart, goals, x_size, y_size);
+        lengthen_solution(s, numofagents);
+        start_node->set_solution(s);
+
         start_node->set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
-
-        cout << "done" << endl;
+        
+       
               
 
-        //printf("unconstrained search done\n");
-        //print_solutions(start_node, numofagents);
+       
+       
+        cout << endl;
         
         while (!OPEN.empty() ) {
             
@@ -301,7 +323,8 @@ static void planner(
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
-                printf("FINAL COST is %f", final_node->get_cost());
+                printf("\nFINAL COST is %f \n", final_node->get_cost());
+                printf("This is the final solution:\n");
                 print_solutions(final_node, numofagents);
                 printf("\n goals reached\n");
                 break;
@@ -342,7 +365,9 @@ static void planner(
                 
                     new_node->set_assignment(goalpos_new);
                     new_node->set_assignmentvect(new_assignmentVect);
-                    new_node->set_solution(unconstrainedSearch(gridmap, starts, new_assignmentVect, goals, x_size, y_size)); 
+                    vector<Path> z = unconstrainedSearch(gridmap, starts, new_assignmentVect, goals, x_size, y_size);
+                    lengthen_solution(z, numofagents);
+                    new_node->set_solution(z); 
                     new_node->set_cost(get_SIC(new_node, numofagents));
                     OPEN.push(new_node);
                 }
@@ -380,8 +405,9 @@ static void planner(
 
                 }
             }
-
+            lengthen_solution(x, numofagents);
             child_node1->set_solution(x);
+           
             child_node1->set_cost(get_SIC(child_node1, numofagents));
             OPEN.push(child_node1);
             
@@ -412,8 +438,9 @@ static void planner(
 
                 }
             }
-            
+            lengthen_solution(y, numofagents);
             child_node2->set_solution(y);      
+            
             child_node2->set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
             
@@ -424,6 +451,7 @@ static void planner(
 
     
     vector<Path> set_of_sol = final_node->get_solution();
+    //print_solutions(final_node, numofagents);
     vector<int> assg = final_node->get_assignmentvect();
     for (int i = 0; i < numofagents; i++)
     {
@@ -435,17 +463,12 @@ static void planner(
     if (goals_reached) {
         for (int i = 0; i < numofagents; i++) {
             vector<Point> sol = set_of_sol[i].pathVect;
-            if (curr_time >= sol.size()) {
-                action_ptr[i] = sol[sol.size()-1].x_pos;
-                action_ptr[i + numofagents] = sol[sol.size()-1].y_pos;
-
-            }
-            else {
-                action_ptr[i] = sol[curr_time].x_pos;
-                action_ptr[i + numofagents] = sol[curr_time].y_pos;
-            }
+            
+            action_ptr[i] = sol[curr_time].x_pos;
+            action_ptr[i + numofagents] = sol[curr_time].y_pos;
+            
         }
-
+        
     }
     
 }
