@@ -37,6 +37,7 @@ using namespace std;
 
 /* Output Arguments */
 #define	ACTION_OUT              plhs[0]
+#define	ASSIGN                  plhs[1]
 
 /* access to the map is shifted to account for 0-based indexing in the map,
 whereas 1-based indexing in matlab (so, robotpose and goalpose are 1-indexed) */
@@ -95,6 +96,7 @@ public:
 
 };
 static Node* final_node;
+static vector<int> assignmentVect;
 
 struct min_heap {
     bool operator()(Node* p1, Node* p2)
@@ -127,7 +129,7 @@ bool check_conflict(Node* node, int numofagents, tuple<int, int, Point, int> &co
         }
 
     }
-    printf("no conflict");
+    printf("No Conflict Found");
     return 1;
 }
 
@@ -214,7 +216,8 @@ static void planner(
         double* goalpos,
         double*	map,
         int curr_time,
-        double* action_ptr
+        double* action_ptr,
+        double* assign
         )
 {   
 
@@ -224,7 +227,6 @@ static void planner(
    
     
     int goals_reached = 0;
-
     if (curr_time == 0) {
 
         //  Defines start and goal position for Roshan's code
@@ -238,7 +240,6 @@ static void planner(
         State_map state_init_map(numofgoals);
         vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
         backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
-        vector<int> assignmentVect;
         
 
         priority_queue<Node*, vector<Node*>, min_heap> OPEN;
@@ -250,12 +251,6 @@ static void planner(
         vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap,  starts);
         double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN, assignmentVect);
         start_node->set_assignment(goalpos_new);
-
-        cout<<"assignmentVec outside fn is "<<endl;
-        for(auto i : assignmentVect){
-            cout<<i<<", ";
-        }
-        cout<<endl;
        // cout << "first assignment done \n" << endl;
 
         // call to Roshan's low level search with no constraints initially. Should return data structure of type: vector <pair<double, vector<Point>>>
@@ -289,7 +284,7 @@ static void planner(
                 goals_reached = 1;
                 final_node = curr;
                 //print_solutions(final_node, numofagents);
-                printf("\n goals reached\n");
+                printf("\nGoals Reached!\n");
                 break;
             }
             //printf("conflict exists\n");
@@ -410,6 +405,10 @@ static void planner(
         }
     }
 
+    for(int i = 0; i < numofagents; i++)
+    {
+        assign[i] = assignmentVect[i];
+    }
     
     vector<Path> set_of_sol = final_node->get_solution();
     goals_reached = 1;
@@ -446,7 +445,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     if (nrhs != 8) {
         mexErrMsgIdAndTxt( "MATLAB:planner:invalidNumInputs",
                 "Eight input arguments required.");
-    } else if (nlhs != 1) {
+    } else if (nlhs != 2) {
         mexErrMsgIdAndTxt( "MATLAB:planner:maxlhs",
                 "One output argument required.");
     }
@@ -501,7 +500,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     ACTION_OUT = mxCreateNumericMatrix( (mwSize)numofagents, (mwSize)2, mxDOUBLE_CLASS, mxREAL); 
     double* action_ptr = (double*) mxGetData(ACTION_OUT);
     
+    /* Create a matrix for the return assignment */ 
+    ASSIGN = mxCreateNumericMatrix( (mwSize)numofagents, (mwSize)1, mxDOUBLE_CLASS, mxREAL); 
+    double* assign = (double*) mxGetData(ASSIGN);
+    
     /* Do the actual planning in a subroutine */
-    planner(numofagents, numofgoals, x_size, y_size, collision_thresh, robotpose, goalpose, map, curr_time, &action_ptr[0]);
+    planner(numofagents, numofgoals, x_size, y_size, collision_thresh, robotpose, goalpose, map, curr_time, &action_ptr[0], &assign[0]);
     return;
 }
