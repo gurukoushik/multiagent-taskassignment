@@ -7,7 +7,7 @@ State_map::State_map(int numofgoalsIn) {
 
 		h_vals.push_back(numeric_limits<double>::infinity());
 	}
-	expanded = false; goalIndex = -2;
+	expanded = false; goalIndex = -1;
 }
 
 
@@ -68,13 +68,12 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 					{
 
 						printf("gridmapIn LHS = %lf, RHS = %lf\n", gridmapIn[newy - 1][newx - 1].getH()[i],
-							h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]+diagonalCost(dir));
+							h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]);
+						if (gridmapIn[newy - 1][newx - 1].getH()[i] > h_temp +
+							(int)map[GETMAPINDEX(newx, newy, x_size, y_size)]) {
 
-						if ( gridmapIn[newy - 1][newx - 1].getH()[i] > 
-							 h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir) ) {
-
-							gridmapIn[newy - 1][newx - 1].setH(i, 
-								h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir) );
+							gridmapIn[newy - 1][newx - 1].setH(i, h_temp +
+								(int)map[GETMAPINDEX(newx, newy, x_size, y_size)]);
 							open_set_map.push(gridmapIn[newy - 1][newx - 1]);
 							printf("Pushed to open_set_map \n");
 						}
@@ -89,7 +88,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 
 
 vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn,
-	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size) {	
+	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size) {
 
 	printf("entering unconstrainedSearch\n");
 	vector<Path> outPaths;
@@ -120,7 +119,7 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 		printf("\n before entering while loop \n");
 
 		while (!optPath.empty() && 
-			!(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint()) ){
+			!(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint())){
 
 			double min_H = numeric_limits<double>::infinity();
 			int finX, finY;
@@ -130,10 +129,9 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 				int newx = optPath.top().getPoint().x_pos + dX[dir1];
 				int newy = optPath.top().getPoint().y_pos + dY[dir1];
 
-				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && 
-					min_H > gridmapIn[newy - 1][newx - 1].getH()[goalIdx] + diagonalCost(dir1) ){
+				if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size && min_H > gridmapIn[newy - 1][newx - 1].getH()[goalIdx]){
 
-					min_H = gridmapIn[newy - 1][newx - 1].getH()[goalIdx] + diagonalCost(dir1);
+					min_H = gridmapIn[newy - 1][newx - 1].getH()[goalIdx];
 					finX = newx; finY = newy;
 				}
 			}
@@ -141,10 +139,10 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 			optPath.push(gridmapIn[finY - 1][finX - 1]);
 			tempPath.pathVect.push_back(gridmapIn[finY - 1][finX - 1].getPoint());
 		}
-		//tempPath.pathVect.push_back(gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint());
+		tempPath.pathVect.push_back(gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint());
 
 		// if need to invert vector
-		//reverse(tempPath.pathVect.begin(), tempPath.pathVect.end());
+		reverse(tempPath.pathVect.begin(), tempPath.pathVect.end());
 
 		// printf("cost of path that goes from robot %d to goal %d is ", i, goalIdx);
 		// printf("%lf\n", gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getH()[goalIdx]);
@@ -217,7 +215,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 				// printf("entered if loop\n");
 				Node_time* newNode = new Node_time;
 				newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
-				newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir));
+				newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]);
 				newNode->setH(gridmapIn[newy - 1][newx - 1].getH()[goalIdx]);
 
 				newNode->setParent(tempPtr);
@@ -254,16 +252,6 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 		std::reverse(backtrack.begin(), backtrack.end());
 		tempPathConst.pathVect = backtrack;
 	}
-
-	while(!open_set.empty()){
-
-		auto tempPtr0 = open_set.top();
-		if(tempPtr0!=nullptr)
-			delete tempPtr0;
-		open_set.pop();
-	}
-
-
 
 	return tempPathConst;
 }
@@ -305,12 +293,4 @@ bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int ne
 	}
 
 	return true;
-}
-
-double diagonalCost(int dir){
-
-	if (dir == 0 || dir == 2 || dir == 5 || dir == 7)
-		return 0.4;
-	else
-		return 0.0;
 }

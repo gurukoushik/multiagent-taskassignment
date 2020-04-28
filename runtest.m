@@ -26,8 +26,7 @@ for ii = 1:numofagents
     if (hr ~= -1)
         delete(hr);
     end
-    hr = text(robotpos(ii,1), robotpos(ii,2), 'S', 'Color', 'c', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
-    hr = scatter(robotpos(ii,1), robotpos(ii,2), 250, 'c');
+    hr = text(robotpos(ii,1), robotpos(ii,2), 'R', 'Color', 'g', 'FontWeight', 'bold');
 end
 % Draw the agent's goal positions
 for ii = 1:numofgoals
@@ -35,15 +34,13 @@ for ii = 1:numofgoals
     if (ht ~= -1)
         delete(ht);
     end
-    ht = text(goalpos(ii,1), goalpos(ii,2), 'P', 'Color', 'y', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
-    ht = scatter(goalpos(ii,1), goalpos(ii,2), 250, 'y');
+    ht = text(goalpos(ii,1), goalpos(ii,2), 'T', 'Color', 'm', 'FontWeight', 'bold');
 end
 
 pause(1.0);
 
 % Vector of plot objects to draw trajectory lines
 hr_vec = zeros(numofagents);
-hline_vec = [];
 
 while (~all(caught))
     
@@ -116,9 +113,8 @@ while (~all(caught))
         end
         
         % Plot the robot position and the trajectory
-        hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), 100, 'c', 'filled');
+        hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), 100, 'g', 'filled');
         h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'w');
-        hline_vec = [hline_vec, h_line];
         
         % Check if goal is reached
         thresh = 0.5;
@@ -127,23 +123,15 @@ while (~all(caught))
         end
     end
     
-    pause(0.2);
+    pause(2);
     
     % Delete the agent position plot after every iteration
     for jj = 1:numofagents
         if (caught(jj)==0)
             delete(hr_vec(jj));
-        else
-            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), 100, 'y', 'filled');
         end
     end
     
-end
-
-pause(1);
-
-for i = 1:size(hline_vec,2)
-    delete(hline_vec(i));
 end
 
 fprintf(1, '\nRESULT:\n');
