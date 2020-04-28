@@ -60,7 +60,7 @@ whereas 1-based indexing in matlab (so, robotpose and goalpose are 1-indexed) */
 
 class Node {
 private:
-    Node* prev_node;
+    
     double cost;
     bool root;
     vector <tuple<int, Point, int>> constraints;
@@ -68,15 +68,8 @@ private:
     double* assignment;
     vector<int> assignmentVect;
 
-public:
-    Node() {}
-    Node(Node* p, bool r) {
-        root = r;
-        prev_node = p;
-
-    }
-    void set_prev_node(Node* p) { prev_node = p; }
-    Node* get_prev_node() { return prev_node; }
+public:  
+    
 
     void set_cost(double c) { cost = c; }
     double get_cost() { return cost; }
@@ -98,18 +91,18 @@ public:
     vector<Path> get_solution() { return solutions; }
 
 };
-static Node* final_node;
+static Node final_node;
 
 struct min_heap {
-    bool operator()(Node* p1, Node* p2)
+    bool operator()(Node p1, Node p2)
     {
-        return p1->get_cost() > p2->get_cost();
+        return p1.get_cost() > p2.get_cost();
     }
 };
 
 
-bool check_conflict(Node* node, int numofagents, tuple<int,  Point, int> &conflict1, tuple<int,  Point, int>& conflict2) {
-    vector<Path> sol = node->get_solution();
+bool check_conflict(Node node, int numofagents, tuple<int,  Point, int> &conflict1, tuple<int,  Point, int>& conflict2) {
+    vector<Path> sol = node.get_solution();
     for (int i = 0; i < numofagents; i++)
     {
         for (int j = i+1; j < numofagents ; j++) {
@@ -148,9 +141,9 @@ bool check_conflict(Node* node, int numofagents, tuple<int,  Point, int> &confli
 
 
 
-double get_SIC(Node* node, int numofagents) {
+double get_SIC(Node node, int numofagents) {
     double cost = 0;
-    vector<Path> solutions = node->get_solution();
+    vector<Path> solutions = node.get_solution();
     for (int i = 0; i < numofagents; i++)
     {
         cost += solutions[i].cost;
@@ -183,11 +176,11 @@ vector<Point> Guru_to_Roshan(double* pos, int numofagents) {
 }
 
 
-void print_solutions(Node* start_node, int numofagents) {
+void print_solutions(Node start_node, int numofagents) {
     printf("Solutions after search:");
     for (int i = 0; i < numofagents; i++) {
         printf("\n Agent  %d:   ", i);
-        vector<Path> paths = (start_node->get_solution());
+        vector<Path> paths = (start_node.get_solution());
         vector<Point> each_path = paths[i].pathVect;
         for (int j = 0; j < each_path.size(); j++) {
             printf("(%d, %d),   ", each_path[j].x_pos, each_path[j].y_pos);
@@ -260,21 +253,17 @@ static void planner(
         int curr_time,
         double* action_ptr,
         double* assign
-        
         )
 {   
 
 
-    
-
-   
-    
+       
     int goals_reached = 0;
 
     if (curr_time == 0) {
         cout << endl;
-        Node* initial_node = new Node(NULL, 1);
-        priority_queue<Node*, vector<Node*>, min_heap> OPEN;
+        
+        priority_queue<Node, vector<Node>, min_heap> OPEN;
         priority_queue<ASG, vector<ASG>, ASG_Comparator> ASG_OPEN;
 
         //  Defines start and goal position for Roshan's code
@@ -300,17 +289,18 @@ static void planner(
         vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
 
         
-        Node* start_node = new Node(initial_node, true);
+        Node start_node;
+        start_node.set_root(1);
         // get first assignment call to Guru's initial assignment function. Should return goal positions of type double*.         
         double* goalpos_new = first_assignment(robotpos, goalpos, cost_matrix, ASG_OPEN, assignmentVectstart);
         PAST_ASSIGNMENTS.push_back(assignmentVectstart);
-        start_node->set_assignment(goalpos_new);
-        start_node->set_assignmentvect(assignmentVectstart);
+        start_node.set_assignment(goalpos_new);
+        start_node.set_assignmentvect(assignmentVectstart);
         vector<Path> s = unconstrainedSearch(gridmap, starts, assignmentVectstart, goals, x_size, y_size);
         lengthen_solution(s, numofagents);
-        start_node->set_solution(s);
-
-        start_node->set_cost(get_SIC(start_node, numofagents));
+        start_node.set_solution(s);
+        print_solutions(start_node, numofagents);
+        start_node.set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
         
        
@@ -321,20 +311,20 @@ static void planner(
         cout << endl;
        
         
-        while (!OPEN.empty() ) {
+        while (!OPEN.empty()  ) {
             
-            Node* curr = OPEN.top();
+            Node curr = OPEN.top();
             OPEN.pop();
             tuple<int, Point, int> conflict1;
             tuple<int, Point, int> conflict2;
 
-            vector<int> assignmentVect = curr->get_assignmentvect();
+            vector<int> assignmentVect = curr.get_assignmentvect();
             int no_conflict = check_conflict(curr, numofagents, conflict1, conflict2);
             
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
-                printf("\nFINAL COST is %f \n", final_node->get_cost());
+                printf("\nFINAL COST is %f \n", final_node.get_cost());
                 printf("This is the final solution:\n");
                 print_solutions(final_node, numofagents);
                 printf("\n goals reached\n");
@@ -343,14 +333,14 @@ static void planner(
             
            
             //create root node of new tree
-            if (curr->get_root() ) {
+            if (curr.get_root() ) {
                 
                 printf("Trying new assignment \n");
-                Node* new_node = new Node(initial_node, true);
-
+                Node new_node;
+                new_node.set_root(1);
                 vector<int> new_assignmentVect = assignmentVect;
                 vector<vector<double>> cost_matrix_new = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
-                vector<Path>sol = curr->get_solution();
+                vector<Path>sol = curr.get_solution();
 
                 
                 for (int i = 0; i < numofagents; i++) {
@@ -379,12 +369,12 @@ static void planner(
                     printf("\nDifferent from old assignment \n");
                     PAST_ASSIGNMENTS.push_back(assignmentVectstart);
                 
-                    new_node->set_assignment(goalpos_new);
-                    new_node->set_assignmentvect(new_assignmentVect);
+                    new_node.set_assignment(goalpos_new);
+                    new_node.set_assignmentvect(new_assignmentVect);
                     vector<Path> z = unconstrainedSearch(gridmap, starts, new_assignmentVect, goals, x_size, y_size);
                     lengthen_solution(z, numofagents);
-                    new_node->set_solution(z); 
-                    new_node->set_cost(get_SIC(new_node, numofagents));
+                    new_node.set_solution(z); 
+                    new_node.set_cost(get_SIC(new_node, numofagents));
                     OPEN.push(new_node);
                 }
                 else {
@@ -394,21 +384,22 @@ static void planner(
             
             
             
-            double* goalpos_child = curr->get_assignment();
+            double* goalpos_child = curr.get_assignment();
             vector<Point> goals_child = Guru_to_Roshan(goalpos_child, numofgoals);
 
             
 
 
 
-            Node* child_node1 = new Node(curr, false);
-            child_node1->set_constraints(curr->get_constraints());
-            child_node1->push_constraints(get<0>(conflict1), get<1>(conflict1), get<2>(conflict1));
-            child_node1->set_assignment(goalpos_child);
-            child_node1->set_assignmentvect(assignmentVect);
+            Node child_node1;
+            child_node1.set_root(0);
+            child_node1.set_constraints(curr.get_constraints());
+            child_node1.push_constraints(get<0>(conflict1), get<1>(conflict1), get<2>(conflict1));
+            child_node1.set_assignment(goalpos_child);
+            child_node1.set_assignmentvect(assignmentVect);
             
             vector<Path> x;
-            vector<tuple<int, Point, int>> cd1_constraints = child_node1->get_constraints();
+            vector<tuple<int, Point, int>> cd1_constraints = child_node1.get_constraints();
             for (int i = 0; i < numofagents; i++) {
                 vector<tuple<int, Point, int>> constraints_per_agent;
                 for (int j = 0; j < cd1_constraints.size(); j++){
@@ -417,7 +408,7 @@ static void planner(
                     }
                 }
                 if (constraints_per_agent.empty()) {
-                    x.push_back(curr->get_solution()[i]);
+                    x.push_back(curr.get_solution()[i]);
                 }
                 else {
                     x.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, constraints_per_agent, x_size, y_size, map, collision_thresh));
@@ -425,22 +416,23 @@ static void planner(
                 }
             }
             lengthen_solution(x, numofagents);
-            child_node1->set_solution(x);
+            child_node1.set_solution(x);
            
-            child_node1->set_cost(get_SIC(child_node1, numofagents));
+            child_node1.set_cost(get_SIC(child_node1, numofagents));
             OPEN.push(child_node1);
             
 
            
             // create child node for conflicting agent 2
-            Node* child_node2 = new Node(curr, false);
-            child_node2->set_constraints(curr->get_constraints());
-            child_node2->push_constraints(get<0>(conflict2), get<1>(conflict2), get<2>(conflict2));
-            child_node2->set_assignment(goalpos_child);
-            child_node2->set_assignmentvect(assignmentVect);
+            Node child_node2;
+            child_node2.set_root(0);
+            child_node2.set_constraints(curr.get_constraints());
+            child_node2.push_constraints(get<0>(conflict2), get<1>(conflict2), get<2>(conflict2));
+            child_node2.set_assignment(goalpos_child);
+            child_node2.set_assignmentvect(assignmentVect);
 
             vector<Path> y;
-            vector<tuple<int, Point, int>> cd2_constraints = child_node2->get_constraints();
+            vector<tuple<int, Point, int>> cd2_constraints = child_node2.get_constraints();
             for (int i = 0; i < numofagents; i++) {
                 vector<tuple<int, Point, int>> constraints_per_agent;
                 for (int j = 0; j < cd2_constraints.size(); j++) {
@@ -449,7 +441,7 @@ static void planner(
                     }
                 }
                 if (constraints_per_agent.empty()) {
-                    y.push_back(curr->get_solution()[i]);
+                    y.push_back(curr.get_solution()[i]);
                 }
                 else {
                     y.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, 
@@ -458,9 +450,9 @@ static void planner(
                 }
             }
             lengthen_solution(y, numofagents);
-            child_node2->set_solution(y);      
+            child_node2.set_solution(y);      
             
-            child_node2->set_cost(get_SIC(child_node2, numofagents));
+            child_node2.set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
             
           
@@ -469,9 +461,9 @@ static void planner(
     }
 
     
-    vector<Path> set_of_sol = final_node->get_solution();
+    vector<Path> set_of_sol = final_node.get_solution();
     //print_solutions(final_node, numofagents);
-    vector<int> assg = final_node->get_assignmentvect();
+    vector<int> assg = final_node.get_assignmentvect();
     for (int i = 0; i < numofagents; i++)
     {
         assign[i] = assg[i];
