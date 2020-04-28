@@ -123,7 +123,7 @@ while (~all(caught))
         end
     end
     
-    pause(2);
+    pause(0.2);
     
     % Delete the agent position plot after every iteration
     for jj = 1:numofagents
