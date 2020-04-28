@@ -352,7 +352,7 @@ public:
 		step = 4;
 	}
 
-	void print_matrix(vector<vector<auto>> matrix)
+	void print_matrix(vector<vector<int>> matrix)
 	{
 		// Print matrix
 		for(int i = 0; i < n; i++)
