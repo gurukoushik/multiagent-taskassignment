@@ -52,7 +52,7 @@ public:
 	void rowminsubtract()
 	{
 		// Row minimum subtraction
-		vector<int> rowmin(n, std::numeric_limits<int>::infinity());
+		vector<double> rowmin(n, std::numeric_limits<double>::infinity());
 		for(int i = 0; i < n; i++)
 			rowmin[i] = *min_element(cost_matrix[i].begin(), cost_matrix[i].end());
 
@@ -66,7 +66,7 @@ public:
 	void colminsubtract()
 	{
 		// Column Minimum Subtraction
-		vector<int> colmin(n, std::numeric_limits<int>::infinity());
+		vector<double> colmin(n, std::numeric_limits<double>::infinity());
 		for(int j = 0; j < n; j++)
 			for(int i = 0; i < n; i++)
 				if (colmin[j] > cost_matrix[i][j]) 
@@ -320,7 +320,7 @@ public:
 		step = 3;
 	}
 
-	void findsmallest(int &minim)
+	void findsmallest(double &minim)
 	{
 		for(int i = 0; i < n; i++)
 		{
@@ -339,7 +339,7 @@ public:
 
 	void altercoveredrow()
 	{
-		int minim = std::numeric_limits<int>::max();
+		double minim = std::numeric_limits<double>::infinity();
 		findsmallest(minim);
 		for(int i = 0; i < n; i++)
 			for(int j = 0; j < n; j++)
@@ -352,7 +352,7 @@ public:
 		step = 4;
 	}
 
-	void print_matrix(vector<vector<int>> matrix)
+	void print_matrix(vector<vector<auto>> matrix)
 	{
 		// Print matrix
 		for(int i = 0; i < n; i++)
