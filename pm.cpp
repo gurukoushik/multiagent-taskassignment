@@ -287,6 +287,15 @@ static void planner(
         State_map state_init_map(numofgoals);
         vector<vector<State_map> > gridmap(y_size, vector<State_map>(x_size, state_init_map));
         backDijkstra(gridmap, goals, map, x_size, y_size, collision_thresh);
+
+        cout<<"gridmap for zeroth goal is "<<endl;
+        for(int i=0; i< y_size; i++){
+            for(int j=0; j< x_size; j++ ){
+                cout<<gridmap[i][j].getH()[0]<<", ";
+            }
+            cout<<endl;
+        }
+
         vector<int> assignmentVectstart;
         vector<vector<double>> cost_matrix = gridmap_to_costmatrix(numofagents, numofgoals, gridmap, starts);
 
