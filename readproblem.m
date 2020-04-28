@@ -1,4 +1,4 @@
-function [N,G,D,C,R,T,M] = readproblem(filename)
+function [N,G,D,C,S,P,F,M] = readproblem(filename)
 
 % READPROBLEM Read problem definition text file.
 %   Params:
@@ -7,8 +7,9 @@ function [N,G,D,C,R,T,M] = readproblem(filename)
 %         G           - Number of Goals (1x1)
 %         D           - dimensions of map (1x2)
 %         C           - collision threshold for map (1x1)
-%         R           - robot start location (Nx2)
-%         T           - goal locations (Mx2)
+%         S           - robot start location (Nx2)
+%         P           - pickup locations (Mx2)
+%         F           - delivery locations (Mx2)
 %         M           - map cell costs (PxQ where P = D(1), Q = D(2))
 
 FID = fopen(filename, 'r');
@@ -37,19 +38,26 @@ if(fgetl(FID) ~= 'C')
 end
 C = fscanf(FID, '%d');
 
-if(fgetl(FID) ~= 'R')
+if(fgetl(FID) ~= 'S')
     fprintf('Error parsing problem file.')
     return;
 end
-R = textscan(FID, '%f%f', 'CollectOutput', true, 'Delimiter', ',');
-R = R{1};
+S = textscan(FID, '%f%f', 'CollectOutput', true, 'Delimiter', ',');
+S = S{1};
 
-if(fgetl(FID) ~= 'T')
+if(fgetl(FID) ~= 'P')
     fprintf('Error parsing problem file.')
     return;
 end
-T = textscan(FID, '%f%f', 'CollectOutput', true, 'Delimiter', ',');
-T = T{1};
+P = textscan(FID, '%f%f', 'CollectOutput', true, 'Delimiter', ',');
+P = P{1};
+
+if(fgetl(FID) ~= 'F')
+    fprintf('Error parsing problem file.')
+    return;
+end
+F = textscan(FID, '%f%f', 'CollectOutput', true, 'Delimiter', ',');
+F = F{1};
 
 if(fgetl(FID) ~= 'M')
     fprintf('Error parsing problem file.')

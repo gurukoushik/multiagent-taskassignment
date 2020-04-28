@@ -128,4 +128,6 @@ unsigned long long GetIndex(int x, int y, int t);
 
 bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int newy, int newt, int i_agent);
 
+double diagonalCost(int dir);
+
 #endif
