@@ -189,9 +189,20 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 	priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
 	open_set.push(rob_start);
 
-	// printf("before entering while\n");
+	// find largest constraint time
+	int time_max = 0;
+	// numeric_limits<double>::infinity();
+	for(auto i_time : tempConstr){
+
+		if(time_max < get<2>(i_time) ){
+			
+			time_max = get<2>(i_time);
+		}
+	}
+
 	// start while loop for A* expansion
-	while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[robotIndex])) {
+	while (!open_set.empty() && 
+		!((open_set.top()->getPoint() == goalsIn[robotIndex]) &&  open_set.top()->getTime() >= time_max  ) ) {
 
 		Node_time* tempPtr = open_set.top();
 
