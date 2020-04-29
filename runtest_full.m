@@ -139,7 +139,7 @@ while (~all(caught))
         end
     end
     
-    pause(2);
+    pause(0.5);
     
     % Delete the agent position plot after every iteration
     for jj = 1:numofagents
@@ -164,7 +164,7 @@ fprintf('\tTime Taken : %d\n', time);
 fprintf('\tMoves Made : [');fprintf('%g ', numofmoves);fprintf(']\n');
 fprintf('\tPath Cost : [');fprintf('%g ', pathcost);fprintf(']\n');
 
-
+pause(2);
 %% Delivery Simulation
 % Starting Positions of the Pickup and Delivery Location
 time = 0;
@@ -262,7 +262,7 @@ while (~all(caught))
         end
     end
     
-    pause(0.2);
+    pause(0.5);
     
     % Delete the agent position plot after every iteration
     for jj = 1:numofagents
