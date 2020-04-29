@@ -10,6 +10,7 @@
 #include <math.h>
 #include <mex.h>
 #include <cstdio>
+#include <time.h>  
 
 #include <algorithm>
 #include <limits>
@@ -183,7 +184,7 @@ vector<Point> Guru_to_Roshan(double* pos, int numofagents) {
 
 
 void print_solutions(Node start_node, int numofagents) {
-    printf("Solutions after search:");
+    
     for (int i = 0; i < numofagents; i++) {
         printf("\n Agent  %d:   ", i);
         vector<Path> paths = (start_node.get_solution());
@@ -266,7 +267,7 @@ static void planner(
 
        
     int goals_reached = 0;
-
+    clock_t start = clock();
     if (curr_time == 0) {
         cout << endl;
         
@@ -327,14 +328,16 @@ static void planner(
 
             vector<int> assignmentVect = curr.get_assignmentvect();
             int no_conflict = check_conflict(curr, numofagents, conflict1, conflict2);
-            print_solutions(curr, numofagents);
+            
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
+                clock_t t = clock() - start;
+                printf("\nTIME taken  %f seconds.\n", ((float)t) / CLOCKS_PER_SEC);
                 printf("\nFINAL COST is %f \n", final_node.get_cost());
                 printf("This is the final solution:\n");
                 print_solutions(final_node, numofagents);
-                printf("\n goals reached\n");
+                //printf("\n goals reached\n");
                 break;
             }
             
@@ -424,8 +427,8 @@ static void planner(
             }
             lengthen_solution(x, numofagents);
             child_node1.set_solution(x);
-            print_solutions(child_node1, numofagents);
-            print_constraint(child_node1.get_constraints(), numofagents);
+            //print_solutions(child_node1, numofagents);
+            
             child_node1.set_cost(get_SIC(child_node1, numofagents));
             OPEN.push(child_node1);
             
@@ -459,7 +462,7 @@ static void planner(
             }
             lengthen_solution(y, numofagents);
             child_node2.set_solution(y);      
-            print_constraint(child_node2.get_constraints(), numofagents);
+            
             child_node2.set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
             
