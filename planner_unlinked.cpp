@@ -299,7 +299,7 @@ static void planner(
         vector<Path> s = unconstrainedSearch(gridmap, starts, assignmentVectstart, goals, x_size, y_size);
         lengthen_solution(s, numofagents);
         start_node.set_solution(s);
-        print_solutions(start_node, numofagents);
+        //print_solutions(start_node, numofagents);
         start_node.set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
         
@@ -320,7 +320,7 @@ static void planner(
 
             vector<int> assignmentVect = curr.get_assignmentvect();
             int no_conflict = check_conflict(curr, numofagents, conflict1, conflict2);
-            
+            //print_solutions(curr, numofagents);
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
