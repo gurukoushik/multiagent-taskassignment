@@ -321,7 +321,7 @@ bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int ne
 double diagonalCost(int dir){
 
 	if (dir == 0 || dir == 2 || dir == 5 || dir == 7)
-		return 0.4;
+		return 0.0;
 	else
 		return 0.0;
 }

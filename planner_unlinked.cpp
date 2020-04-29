@@ -126,7 +126,13 @@ bool check_conflict(Node node, int numofagents, tuple<int,  Point, int> &conflic
                         conflict2 = make_tuple(j, agent2[k], k);
                         return 0;
                     }
-
+                    if (((agent1[k].x_pos + agent1[k-1].x_pos) / 2 == (agent2[k].x_pos + agent2[k - 1].x_pos) / 2 ) &&
+                        ((agent1[k].y_pos + agent1[k - 1].y_pos) / 2 == (agent2[k].y_pos + agent2[k - 1].y_pos) / 2)){
+                        conflict1 = make_tuple(i, agent1[k], k);
+                        conflict2 = make_tuple(j, agent2[k], k);
+                        return 0;
+                        
+                    }
                 }
 
             }
@@ -231,6 +237,7 @@ void lengthen_solution(vector<Path> &y, int numofagents) {
         
     }
     for (int i = 0; i < numofagents; i++) {
+
         int m = y[i].pathVect.size();
         Point last = y[i].pathVect[m - 1];
         while (y[i].pathVect.size() < j) {
@@ -320,7 +327,7 @@ static void planner(
 
             vector<int> assignmentVect = curr.get_assignmentvect();
             int no_conflict = check_conflict(curr, numofagents, conflict1, conflict2);
-            //print_solutions(curr, numofagents);
+            print_solutions(curr, numofagents);
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
@@ -417,7 +424,8 @@ static void planner(
             }
             lengthen_solution(x, numofagents);
             child_node1.set_solution(x);
-           
+            print_solutions(child_node1, numofagents);
+            print_constraint(child_node1.get_constraints(), numofagents);
             child_node1.set_cost(get_SIC(child_node1, numofagents));
             OPEN.push(child_node1);
             
@@ -451,7 +459,7 @@ static void planner(
             }
             lengthen_solution(y, numofagents);
             child_node2.set_solution(y);      
-            
+            print_constraint(child_node2.get_constraints(), numofagents);
             child_node2.set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
             
