@@ -79,9 +79,10 @@ private:
 	Node_time* parent;
 	vector<Node_time*> successors;
 	bool expanded;
+	bool visited;
 
 public:
-	Node_time() : g_val(numeric_limits<double>::infinity()), expanded(false), parent(nullptr) {}
+	Node_time() : g_val(numeric_limits<double>::infinity()), expanded(false), parent(nullptr), visited(false) {}
 
 	Point getPoint() const { return position; }
 	Node_time* getParent() const { return parent; }
@@ -91,6 +92,7 @@ public:
 	double getH() const { return h_val; }
 	// int getGoalIndex() const {return goalIndex;}
 	bool isExpanded() const { return expanded; }
+	bool getVisited() const{ return visited; }
 
 	void setPoint(Point positionIn) { position = positionIn; }
 	void setParent(Node_time* parentIn) { parent = parentIn; }
@@ -99,10 +101,27 @@ public:
 	void setY(int y_posIn) { position.y_pos = y_posIn; }
 	void setT(int time_stepIn) { time_step = time_stepIn; }
 	void setG(double g_valIn) { g_val = g_valIn; }
-	void setH(double h_valIn) { h_val = h_valIn; }
+	// void setH(double h_valIn) { h_val = h_valIn; }
+
+	void calcH(const vector< vector<State_map> >& gridmap_pickupIn, 
+		const vector< vector<State_map> >& gridmap_deliveryIn,
+		const Point& pickupGoalIn, 
+		int pickupGoalIdx, int deliveryGoalIdx){
+
+		if(visited){
+
+			h_val = gridmap_deliveryIn[position.y_pos - 1][position.x_pos - 1].getH()[deliveryGoalIdx];
+		}
+		else{
+
+			h_val = gridmap_deliveryIn[pickupGoalIn.y_pos - 1][pickupGoalIn.x_pos - 1].getH()[deliveryGoalIdx] + 
+					gridmap_pickupIn[position.y_pos - 1][position.x_pos - 1].getH()[pickupGoalIdx];	
+		}
+	}
 	// void setGoalIndex(int goalIndexIn){goalIndex = goalIndexIn;}
 	void expand() { expanded = true; }
 	void contract() { expanded = false; }
+	void setVisited(bool visitedIn) {visited = visitedIn;}
 };
 
 // compare struct for the priority queue
@@ -121,8 +140,15 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, const vector<Point>& robotPosnsIn,
 	const vector<int>& assignment, const vector<Point>& goalsIn, int x_size, int y_size);
 
-Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point& robotPosnIn, int robotIndex,
-	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int> >& tempConstr,
+Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn, 
+	const vector< vector<State_map> >& gridmap_deliveryIn,
+	const Point& robotPosnIn, 
+	int robotIndex,
+	const vector<int>& assignmentPickup,
+	const vector<int>& assignmentDelivery,
+	const vector<Point>& pickupGoalIn, 
+	const vector<Point>& deliveryGoalIn, 
+	const vector<tuple<int, Point, int> >& tempConstr,
 	int x_size, int y_size, double* map, int collision_thresh);
 
 unsigned long long GetIndex(int x, int y, int t);

@@ -7,10 +7,12 @@ State_map::State_map(int numofgoalsIn) {
 
 		h_vals.push_back(numeric_limits<double>::infinity());
 	}
-	expanded = false; goalIndex = -2;
+	expanded = false; goalIndex = -1;
 }
 
 
+
+///// primary functions ///////
 void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& goals, double* map,
 	int x_size, int y_size, int collision_thresh) {
 
@@ -157,9 +159,16 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 }
 
 
-Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point& robotPosnIn, int robotIndex,
-	const vector<int>& assignment, const vector<Point>& goalsIn, const vector<tuple<int, Point, int> >& tempConstr,
-	int x_size, int y_size, double* map, int collision_thresh) {
+Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn, 
+	const vector< vector<State_map> >& gridmap_deliveryIn,
+	const Point& robotPosnIn, 
+	int robotIndex,
+	const vector<int>& assignmentPickup,
+	const vector<int>& assignmentDelivery,
+	const vector<Point>& pickupGoalIn, 
+	const vector<Point>& deliveryGoalIn, 
+	const vector<tuple<int, Point, int> >& tempConstr,
+	int x_size, int y_size, double* map, int collision_thresh){
 
 	printf("\n entering constrainedSearch \n");
 	// int numofagents = robotPosnsIn.size();
@@ -170,9 +179,9 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 	int robotposeX = robotPosnIn.x_pos, robotposeY = robotPosnIn.y_pos;
 	unsigned long long index_temp = 0; double g_temp = 0;
 	int x_temp = robotposeX; int y_temp = robotposeY; int t_temp = curr_time;
-	int goalIdx = assignment[robotIndex];
+	int pickupGoalIdx = assignmentPickup[robotIndex], deliveryGoalIdx = assignmentDelivery[robotIndex];
 
-	if (goalIdx >= goalsIn.size()) {
+	if (pickupGoalIdx >= pickupGoalIn.size() || deliveryGoalIdx >= deliveryGoalIn.size()) {
 
 		printf("goalidx is greater than no of goals\n");
 	}
@@ -184,7 +193,9 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 	Node_time* rob_start = new Node_time;
 	rob_start->setX(robotposeX); rob_start->setY(robotposeY); rob_start->setT(curr_time);
 	rob_start->setG(0.0);
-	rob_start->setH(gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx]);
+	rob_start->calcH( gridmap_pickupIn, gridmap_deliveryIn, pickupGoalIn[robotIndex], pickupGoalIdx, deliveryGoalIdx );
+	// rob_start->setH(gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx]);
+
 
 	priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
 	open_set.push(rob_start);
@@ -202,13 +213,15 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 
 	// start while loop for A* expansion
 	while (!open_set.empty() && 
-		!((open_set.top()->getPoint() == goalsIn[robotIndex]) &&  open_set.top()->getTime() >= time_max  ) ) {
+		!((open_set.top()->getPoint() == deliveryGoalIn[robotIndex]) && open_set.top()->getVisited() &&
+			open_set.top()->getTime() >= time_max  ) ) {
 
 		Node_time* tempPtr = open_set.top();
 
 		int x_temp = tempPtr->getPoint().x_pos, y_temp = tempPtr->getPoint().y_pos,
 			t_temp = tempPtr->getTime();
 		double g_temp = tempPtr->getG();
+		bool prevVisited = tempPtr->getVisited();
 		tempPtr->expand();
 		closed_set.insert(GetIndex(x_temp, y_temp, t_temp));
 		open_set.pop();
@@ -228,8 +241,18 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 				// printf("entered if loop\n");
 				Node_time* newNode = new Node_time;
 				newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
+
+				if(!prevVisited && newNode->getPoint() == pickupGoalIn[robotIndex]){
+					newNode->setVisited(true);
+				}
+				else{
+					newNode->setVisited(prevVisited);
+				}
+
 				newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir));
-				newNode->setH(gridmapIn[newy - 1][newx - 1].getH()[goalIdx]);
+				newNode->calcH(gridmap_pickupIn, gridmap_deliveryIn, pickupGoalIn[robotIndex], pickupGoalIdx, 
+					deliveryGoalIdx);
+				// newNode->setH(gridmapIn[newy - 1][newx - 1].getH()[goalIdx]);
 
 				newNode->setParent(tempPtr);
 				tempPtr->addSuccessor(newNode);
@@ -338,10 +361,22 @@ bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int ne
 double diagonalCost(int dir)
 {
 
-	if (dir == 0 || dir == 2 || dir == 5 || dir == 7)
-		return 1.4;
-    else if (dir == 1 || dir == 3 || dir == 4 || dir == 6)
-        return 1;
+	if(numOfDirs==9){
+
+		if (dir == 0 || dir == 2 || dir == 5 || dir == 7)
+			return 1.4;
+	    else if (dir == 1 || dir == 3 || dir == 4 || dir == 6)
+	        return 1;
+		else
+			return 0.0;	
+	}
+	else if(numOfDirs==5){
+		if(dir == 4)
+			return 0;
+		else
+			return 1;
+	}
 	else
-		return 0.0;
+		return -1;
+	
 }
