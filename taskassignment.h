@@ -5,31 +5,48 @@ class ASG
 {
 private:
 	vector<vector<int>> solution;
+    vector<vector<int>> solution_d;
 	vector<vector<int>> constraintsI;
 	vector<vector<int>> constraintsO;
-	int cost;
+    vector<vector<int>> constraintsI_d;
+	vector<vector<int>> constraintsO_d;
+	double cost;
+    double cost_d;
+
 public:
-	ASG(vector<vector<int>> new_assign, vector<vector<double>> costmatrix)
+	ASG(vector<vector<int>> new_assign, vector<vector<double>> costmatrix, vector<vector<int>> new_assign_d, vector<vector<double>> costmatrix_d)
 	{
 		solution = new_assign;
 		cost = costofassignment(costmatrix);
+        solution_d = new_assign_d;
+		cost_d = costofassignment(costmatrix_d);
 	}
 	
 	ASG(){}
 
 	vector<vector<int>> getsolution(){return solution;}
+    vector<vector<int>> getsolution_d(){return solution_d;}
 	vector<vector<int>> getconstraintsI(){return constraintsI;}
 	vector<vector<int>> getconstraintsO(){return constraintsO;}
+	vector<vector<int>> getconstraintsI_d(){return constraintsI_d;}
+	vector<vector<int>> getconstraintsO_d(){return constraintsO_d;}
 	double getcost(){return cost;}
-	void setsolution(vector<vector<int>> solution){this->solution = solution;}
+    double getcost_d(){return cost_d;}
+	
+    void setsolution(vector<vector<int>> solution){this->solution = solution;}
 	void setconstraintsI(vector<vector<int>> constraintsI){this->constraintsI = constraintsI;}
 	void setconstraintsO(vector<vector<int>> constraintsO){this->constraintsO = constraintsO;}
 	void setcost(double cost){this->cost = cost;}
-	int costofassignment(vector<vector<double>> cost_matrix)
+    void setsolution_d(vector<vector<int>> solution_d){this->solution_d = solution_d;}
+	void setconstraintsI_d(vector<vector<int>> constraintsI_d){this->constraintsI_d = constraintsI_d;}
+	void setconstraintsO_d(vector<vector<int>> constraintsO_d){this->constraintsO_d = constraintsO_d;}
+	void setcost_d(double cost_d){this->cost_d = cost_d;}
+    
+	double costofassignment(vector<vector<double>> cost_matrix)
 	{
 		int n = cost_matrix.size();
 		int m = cost_matrix[0].size();
-		int totalcost = 0;
+		double totalcost = 0;
 		for(int i = 0; i < n; i++)
 			for(int j = 0; j < m; j++)
 				totalcost += cost_matrix[i][j]*solution[i][j];
@@ -45,6 +62,16 @@ public:
 		}
 		return goalindex;
 	}
+    int getgoalindex_d(int agentindex)
+	{
+		int goalindex = -1;
+		for(int i = 0; i < solution_d.size(); i++)
+		{
+			if (solution_d[agentindex][i] == 1)
+				goalindex = i;
+		}
+		return goalindex;
+	}
 	int solutionempty()
 	{
 		if (solution[0][0] < 0)
@@ -56,7 +83,7 @@ public:
 struct ASG_Comparator {
     bool operator()(ASG p1, ASG p2)
     {
-        return p1.getcost() > p2.getcost();
+        return (p1.getcost()+p1.getcost_d()) > (p2.getcost()+p2.getcost_d());
     }
 };
 
@@ -94,26 +121,34 @@ vector<vector<int>> constrainedassignment(vector<vector<int>> constraintsI, vect
 	return assignment;
 }
 
-double* first_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, 
-	priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN, vector<int> &assignmentvect)
+void first_assignment(double* robotpos, double* pickuppos, double* deliverypos, vector<vector<double>> costmatrix_pickup, 
+	 vector<vector<double>> costmatrix_delivery, vector<int> &assignmentVectpickup, vector<int> &assignmentVectdelivery, 
+        double* &pickuppos_new, double* &deliverypos_new, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN)
 {
-	int n = costmatrix.size();
-	static double goalnew[100]; 
-    vector<int> assignnew;
+	int n = costmatrix_pickup.size();
+	static double pickupnew[200];
+    static double deliverynew[200];
     
 	ASG R;
-	R.setsolution(constrainedassignment(R.getconstraintsI(), R.getconstraintsO(), costmatrix));
-	R.setcost(R.costofassignment(costmatrix));
+	
+    R.setsolution(constrainedassignment(R.getconstraintsI(), R.getconstraintsO(), costmatrix_pickup));
+	R.setcost(R.costofassignment(costmatrix_pickup));
+    R.setsolution_d(constrainedassignment(R.getconstraintsI_d(), R.getconstraintsO_d(), costmatrix_delivery));
+	R.setcost_d(R.costofassignment(costmatrix_delivery));
+    
 	ASG_OPEN.push(R);
 
     for(int i = 0; i < n; i++)
     {
-        assignnew.push_back(R.getgoalindex(i));
+        assignmentVectpickup.push_back(R.getgoalindex(i));
+        assignmentVectdelivery.push_back(R.getgoalindex_d(i));
     }
-    assignmentvect = assignnew;
-	goalsort(goalpos, R.getsolution(), goalnew, n);
-
-	return goalnew;
+    
+	goalsort(pickuppos, R.getsolution(), pickupnew, n);
+    goalsort(deliverypos, R.getsolution_d(), deliverynew, n);
+    
+    pickuppos_new = pickupnew;
+    deliverypos_new = deliverynew;
 }
 
 double* next_assignment(double* robotpos, double* goalpos, vector<vector<double>> costmatrix, priority_queue<ASG, vector<ASG>, ASG_Comparator> &ASG_OPEN, vector<int> &assignmentvect)
