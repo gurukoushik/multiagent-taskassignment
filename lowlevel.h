@@ -7,18 +7,18 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stack>
-// #include <map>
 #include "param.h"
 
 using namespace std;
 
 #define GETMAPINDEX(X, Y, XSIZE, YSIZE) ((Y-1)*XSIZE + (X-1))
-// #define NUMOFDIRS 9
 
 #ifndef LOWLEVEL_H
 #define LOWLEVEL_H
 
-///// common class definitions //////
+///// Common Class Definitions //////
+
+// The struct Point has the grid position coordinates x_pos and y_pos
 struct Point {
 	int x_pos, y_pos;
 	Point() {}
@@ -29,22 +29,23 @@ struct Point {
 	}
 };
 
+// The structure Path has a vector of points and the cost of traversing the path
 struct Path {
 	vector<Point> pathVect;
 	double cost;
 };
 
-// defines a point on the gridmap
+// The class State_map defines a point on the gridmap and its attributes
 class State_map {
 
 private:
 	Point position;
-	vector<double> h_vals;
+	vector<double> h_vals; // has the values of the distances from the goal positions
 	bool expanded;
-	int goalIndex;
+	int goalIndex; 
 
 public:
-	State_map(int numofgoalsIn);
+	State_map(int numofgoalsIn); // Class Constructor
 
 	Point getPoint() const { return position; }
 	vector<double> getH() const { return h_vals; }
@@ -59,7 +60,7 @@ public:
 	void contract() { expanded = false; }
 };
 
-// compare struct for the priority queue
+// Comparator for the priority queue
 struct CompareF_map {
 	bool operator()(State_map const& s1, State_map const& s2) {
 		// return "true" if "p1" is ordered before "p2", for example:
@@ -67,7 +68,7 @@ struct CompareF_map {
 	}
 };
 
-// defines a point for 3D search
+// Defines a Point for 3D Search
 class Node_time {
 
 private:

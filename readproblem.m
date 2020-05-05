@@ -1,10 +1,11 @@
-function [N,G,D,C,S,P,F,M] = readproblem(filename)
+function [N,G,X,D,C,S,P,F,M] = readproblem(filename)
 
 % READPROBLEM Read problem definition text file.
 %   Params:
 %         filename    - name of problem text file
 %         N           - Number of Agents (1x1)
-%         G           - Number of Goals (1x1)
+%         G           - Number of Pickups (1x1)
+%         X           - Number of Delivery (1x1)
 %         D           - dimensions of map (1x2)
 %         C           - collision threshold for map (1x1)
 %         S           - robot start location (Nx2)
@@ -25,6 +26,12 @@ if(fgetl(FID) ~= 'G')
     return;
 end
 G = fscanf(FID, '%d')';
+
+if(fgetl(FID) ~= 'X')
+    fprintf('Error parsing problem file.')
+    return;
+end
+X = fscanf(FID, '%d')';
 
 if(fgetl(FID) ~= 'D')
     fprintf('Error parsing problem file.')

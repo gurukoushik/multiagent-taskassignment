@@ -2,14 +2,21 @@ function runtest_full(problemfile)
 
 %% Simulation Setup
 % Read the map text file and store the variables
-[numofagents, numofgoals, mapdims , C, robotstart, pickuppose, deliverypose, envmap] = readproblem(problemfile);
+[numofagents, numofgoals, numofdelivery, mapdims , C, robotstart, pickuppose, deliverypose, envmap] = readproblem(problemfile);
 
 % Close all previous windows
 close all;
 
 % Draw the Environment
 figure('units','normalized','outerposition',[0 0 1 1]);
-imagesc(envmap'); axis square; colorbar; colormap jet; hold on;
+ccc = gray;
+ccc = flipud(ccc);
+colormap(ccc);
+imagesc(envmap'); axis square; colorbar; hold on;
+
+plotsize1 = 800;
+plotsize2 = 300;
+plotsize3 = 100;
 
 %% Pickup Simulation
 % Starting Positions of the Robot and Pickup Location
@@ -20,8 +27,9 @@ delpos = deliverypose;
 
 % Logging required metrics for each agent
 numofmoves = zeros(1,numofagents);
-caught = false(1,numofgoals);
 pathcost = zeros(1,numofagents);
+picked = false(1,numofgoals);
+delivered = false(1,numofgoals);
 
 % Draw the agent's starting positions
 for ii = 1:numofagents
@@ -29,8 +37,8 @@ for ii = 1:numofagents
     if (hr ~= -1)
         delete(hr);
     end
-    hr = text(robotpos(ii,1), robotpos(ii,2), 'S', 'Color', 'c', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
-    hr = scatter(robotpos(ii,1), robotpos(ii,2), 250, 'c');
+    hr = scatter(robotpos(ii,1), robotpos(ii,2), plotsize1, [1,0.2,0.2], 'Filled', 'square');
+    hr = text(robotpos(ii,1), robotpos(ii,2), 'S', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
 % Draw the agent's pickup positions
 for ii = 1:numofgoals
@@ -38,8 +46,8 @@ for ii = 1:numofgoals
     if (ht ~= -1)
         delete(ht);
     end
-    ht = text(goalpos(ii,1), goalpos(ii,2), 'P', 'Color', 'y', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
-    ht = scatter(goalpos(ii,1), goalpos(ii,2), 250, 'y');
+    ht = scatter(goalpos(ii,1), goalpos(ii,2), plotsize1, [0,0.5,1], 'Filled', 'square');
+    ht = text(goalpos(ii,1), goalpos(ii,2), 'P', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
 % Draw the agent's delivery positions
 for ii = 1:numofgoals
@@ -47,48 +55,50 @@ for ii = 1:numofgoals
     if (hd ~= -1)
         delete(hd);
     end
-    hd = text(delpos(ii,1), delpos(ii,2), 'D', 'Color', 'g', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
-    hd = scatter(delpos(ii,1), delpos(ii,2), 250, 'g');
+    hd = scatter(delpos(ii,1), delpos(ii,2), plotsize1, [0,0.8,0.4], 'Filled', 'square');
+    hd = text(delpos(ii,1), delpos(ii,2), 'D', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
-
+% 
 pause(1.0);
 
 % Vector of plot objects to draw trajectory lines
 hr_vec = zeros(numofagents);
-hline_vec = [];
+hr_vec_pick = zeros(numofagents);
+hline_vec_full = [];
 
-while (~all(caught))
+while (~all(delivered) || ~all(picked))
     
     % Call robot planner to get assignment and actions
-    [newrobotpos,assign] = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time);
-    
+    [newrobotpos,assign_pickup, assign_delivery] = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time, delpos, numofdelivery);
+
     % Throw an error if the assignment has invalid size
-    if (size(assign, 1) ~= numofagents)
-        fprintf(1, 'ERROR: invalid assignment, check size in output\n');
+    if (size(assign_pickup, 1) ~= numofagents)
+        fprintf(1, '\nERROR: invalid assignment, check size in output\n');
         return;
     end
     
     % Throw an error if the robotpos has invalid size
     if (size(newrobotpos, 1) ~= numofagents  || size(newrobotpos, 2) ~= size(goalpos, 2))
-        fprintf(1, 'ERROR: invalid action, check action size in output\n');
+        fprintf(1, '\nERROR: invalid action, check action size in output\n');
         return;
     end
     
     newrobotpos = cast(newrobotpos, 'like', robotpos);
     
     % Throw an error if the action is invalid or leads to a collision
-    if (any(newrobotpos(:,1) < 1) || any(newrobotpos(:,1) > size(envmap, 1)) || ...
-            any(newrobotpos(:,2) < 1) || any(newrobotpos(:,2) > size(envmap, 2)))
-        fprintf(1, 'ERROR: out-of-map robot position commanded\n');
-        return;
-    elseif (any(envmap(newrobotpos(:,1), newrobotpos(:,2)) >= C))
-        fprintf(1, 'ERROR: planned action leads to collision\n');
-        return;
-    elseif (any(abs(newrobotpos(:,1)-robotpos(:,1)) > 1) || any(abs(newrobotpos(2)-robotpos(2)) > 1))
-        fprintf(1, 'ERROR: invalid action commanded. robot must move on 8-connected grid.\n');
-        return;
+    for kk = 1:numofagents
+        if (newrobotpos(kk,1) < 1 || newrobotpos(kk,1) > size(envmap, 1) || ...
+                newrobotpos(kk,2) < 1 || newrobotpos(kk,2) > size(envmap, 2))
+            fprintf(1, '\nERROR: out-of-map robot position commanded\n');
+            return;
+        elseif (envmap(newrobotpos(kk,1), newrobotpos(kk,2)) >= C)
+            fprintf(1, '\nERROR: planned action leads to collision\n');
+            return;
+        elseif (abs(newrobotpos(kk,1)-robotpos(kk,1)) > 1 || abs(newrobotpos(kk,2)-robotpos(kk,2)) > 1)
+            fprintf(1, '\nERROR: invalid action commanded. robot must move on 8-connected grid.\n');
+            return;
+        end
     end
-    
     time = time + 1;
     prev_robotpos = robotpos;
     robotpos = newrobotpos;
@@ -97,7 +107,7 @@ while (~all(caught))
     for pp = 1:numofagents
         for kk = (pp+1):numofagents
             if (newrobotpos(pp,1) == newrobotpos(kk,1) && newrobotpos(pp,2) == newrobotpos(kk,2))
-                fprintf(1, 'ERROR: Position Collision Detected.\n');
+                fprintf(1, '\nERROR: Position Collision Detected.\n');
             end
         end
     end
@@ -105,7 +115,7 @@ while (~all(caught))
         for kk = (pp+1):numofagents
             if (newrobotpos(pp,1) == prev_robotpos(kk,1) && newrobotpos(pp,2) == prev_robotpos(kk,2))
                 if (newrobotpos(kk,1) == prev_robotpos(pp,1) && newrobotpos(kk,2) == prev_robotpos(pp,2))
-                    fprintf(1, 'ERROR: Edge Collision Detected.\n');
+                    fprintf(1, '\nERROR: Edge Collision Detected.\n');
                 end
             end
         end
@@ -114,39 +124,62 @@ while (~all(caught))
         for kk = (pp+1):numofagents
             if ((newrobotpos(pp,1) + prev_robotpos(pp,1))/2 == (newrobotpos(kk,1) + prev_robotpos(kk,1))/2)
                 if ((newrobotpos(pp,2) + prev_robotpos(pp,2))/2 == (newrobotpos(kk,2) + prev_robotpos(kk,2))/2)
-                    fprintf(1, 'ERROR: Diagonal Collision Detected.\n');
+                    fprintf(1, '\nERROR: Diagonal Collision Detected.\n');
                 end
             end
         end
     end
     
+    hline_vec = [];
     for ii = 1:numofagents
         % Add cost and number of moves iteratively
-        if(caught(ii) ~= true)
-            pathcost(ii) = pathcost(ii) + envmap(robotpos(ii,1), robotpos(ii,2));
+        if(delivered(ii) ~= true)
+            pathcost(ii) = pathcost(ii) + envmap(robotpos(ii,1), robotpos(ii,2)) + distance([robotpos(ii,1), robotpos(ii,2)],[prev_robotpos(ii,1), prev_robotpos(ii,2)]);
             numofmoves(ii) = numofmoves(ii) + 1;
         end
         
         % Plot the robot position and the trajectory
-        hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), 100, 'c', 'filled');
-        h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'w');
-        hline_vec = [hline_vec, h_line];
+%         h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'black--');
+        if picked(ii) == 1
+            hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize2, [1,0.6,0.2], 'filled');
+            hr_vec_pick(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize3, 'y', 'filled');
+        else
+            hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize2, [1,0.6,0.2], 'filled');
+        end
+%         hline_vec = [hline_vec; h_line];
         
         % Check if goal is reached
         thresh = 0.5;
-        if (abs(robotpos(ii,1)-goalpos(assign(ii)+1,1)) <= thresh && abs(robotpos(ii,2)-goalpos(assign(ii)+1,2)) <= thresh)
-            caught(ii) = true;
+        if (abs(robotpos(ii,1)-goalpos(assign_pickup(ii)+1,1)) <= thresh && abs(robotpos(ii,2)-goalpos(assign_pickup(ii)+1,2)) <= thresh)
+            picked(ii) = true;
+        end
+        
+        if (abs(robotpos(ii,1)-delpos(assign_delivery(assign_pickup(ii)+1)+1,1)) <= thresh && abs(robotpos(ii,2)-delpos(assign_delivery(assign_pickup(ii)+1)+1,2)) <= thresh)
+            delivered(ii) = true;
         end
     end
-    
-    pause(0.2);
+%     hline_vec_full = [hline_vec_full, hline_vec];
+    pause(0.5);
     
     % Delete the agent position plot after every iteration
     for jj = 1:numofagents
-        if (caught(jj)==0)
-            delete(hr_vec(jj));
-        else
-            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), 100, 'y', 'filled');
+        delete(hr_vec(jj));
+        if picked(jj) == 1
+            %delete(hr_vec_pick(jj));
+        end
+        %delete(hline_vec(jj));
+    end
+    
+    for jj = 1:numofagents
+        if ((abs(robotpos(jj,1)-goalpos(assign_pickup(jj)+1,1)) <= thresh && abs(robotpos(jj,2)-goalpos(assign_pickup(jj)+1,2)) <= thresh))
+            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize3, 'y', 'filled');
+        end
+    end
+    
+    for jj = 1:numofagents
+        if ((abs(robotpos(jj,1)-delpos(assign_delivery(assign_pickup(jj)+1)+1,1)) <= thresh && abs(robotpos(jj,2)-delpos(assign_delivery(assign_pickup(jj)+1)+1,2)) <= thresh))
+            hr_vec_pick(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize2, [1,0.6,0.2], 'filled');
+            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize3, 'w', 'filled');
         end
     end
     
@@ -154,135 +187,9 @@ end
 
 pause(1);
 
-for i = 1:size(hline_vec,2)
-    delete(hline_vec(i));
-end
 
-fprintf(1, '\nRESULT FOR PICKUP:\n');
-fprintf('\tGoals Completed : [');fprintf('%g ', caught);fprintf(']\n');
-fprintf('\tTime Taken : %d\n', time);
-fprintf('\tMoves Made : [');fprintf('%g ', numofmoves);fprintf(']\n');
-fprintf('\tPath Cost : [');fprintf('%g ', pathcost);fprintf(']\n');
-
-
-%% Delivery Simulation
-% Starting Positions of the Pickup and Delivery Location
-time = 0;
-robotpos = pickuppose;
-goalpos = deliverypose;
-
-% Logging required metrics for each agent
-numofmoves = zeros(1,numofagents);
-caught = false(1,numofgoals);
-pathcost = zeros(1,numofagents);
-
-% Vector of plot objects to draw trajectory lines
-hr_vec = zeros(numofagents);
-hline_vec = [];
-
-while (~all(caught))
-    
-    % Call robot planner to get assignment and actions
-    [newrobotpos,assign] = robotplanner(numofagents, numofgoals, mapdims, C, robotpos, goalpos, envmap, time);
-    
-    % Throw an error if the assignment has invalid size
-    if (size(assign, 1) ~= numofagents)
-        fprintf(1, 'ERROR: invalid assignment, check size in output\n');
-        return;
-    end
-    
-    % Throw an error if the robotpos has invalid size
-    if (size(newrobotpos, 1) ~= numofagents  || size(newrobotpos, 2) ~= size(goalpos, 2))
-        fprintf(1, 'ERROR: invalid action, check action size in output\n');
-        return;
-    end
-    
-    newrobotpos = cast(newrobotpos, 'like', robotpos);
-    
-    % Throw an error if the action is invalid or leads to a collision
-    if (any(newrobotpos(:,1) < 1) || any(newrobotpos(:,1) > size(envmap, 1)) || ...
-            any(newrobotpos(:,2) < 1) || any(newrobotpos(:,2) > size(envmap, 2)))
-        fprintf(1, 'ERROR: out-of-map robot position commanded\n');
-        return;
-    elseif (any(envmap(newrobotpos(:,1), newrobotpos(:,2)) >= C))
-        fprintf(1, 'ERROR: planned action leads to collision\n');
-        return;
-    elseif (any(abs(newrobotpos(:,1)-robotpos(:,1)) > 1) || any(abs(newrobotpos(2)-robotpos(2)) > 1))
-        fprintf(1, 'ERROR: invalid action commanded. robot must move on 8-connected grid.\n');
-        return;
-    end
-    
-    time = time + 1;
-    prev_robotpos = robotpos;
-    robotpos = newrobotpos;
-    
-    % Throw an error if agents collide
-    for pp = 1:numofagents
-        for kk = (pp+1):numofagents
-            if (newrobotpos(pp,1) == newrobotpos(kk,1) && newrobotpos(pp,2) == newrobotpos(kk,2))
-                fprintf(1, 'ERROR: Position Collision Detected.\n');
-            end
-        end
-    end
-    for pp = 1:numofagents
-        for kk = (pp+1):numofagents
-            if (newrobotpos(pp,1) == prev_robotpos(kk,1) && newrobotpos(pp,2) == prev_robotpos(kk,2))
-                if (newrobotpos(kk,1) == prev_robotpos(pp,1) && newrobotpos(kk,2) == prev_robotpos(pp,2))
-                    fprintf(1, 'ERROR: Edge Collision Detected.\n');
-                end
-            end
-        end
-    end
-    for pp = 1:numofagents
-        for kk = (pp+1):numofagents
-            if ((newrobotpos(pp,1) + prev_robotpos(pp,1))/2 == (newrobotpos(kk,1) + prev_robotpos(kk,1))/2)
-                if ((newrobotpos(pp,2) + prev_robotpos(pp,2))/2 == (newrobotpos(kk,2) + prev_robotpos(kk,2))/2)
-                    fprintf(1, 'ERROR: Diagonal Collision Detected.\n');
-                end
-            end
-        end
-    end
-    
-    for ii = 1:numofagents
-        % Add cost and number of moves iteratively
-        if(caught(ii) ~= true)
-            pathcost(ii) = pathcost(ii) + envmap(robotpos(ii,1), robotpos(ii,2));
-            numofmoves(ii) = numofmoves(ii) + 1;
-        end
-        
-        % Plot the robot position and the trajectory
-        hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), 100, 'c', 'filled');
-        h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'w');
-        hline_vec = [hline_vec, h_line];
-        
-        % Check if goal is reached
-        thresh = 0.5;
-        if (abs(robotpos(ii,1)-goalpos(assign(ii)+1,1)) <= thresh && abs(robotpos(ii,2)-goalpos(assign(ii)+1,2)) <= thresh)
-            caught(ii) = true;
-        end
-    end
-    
-    pause(0.2);
-    
-    % Delete the agent position plot after every iteration
-    for jj = 1:numofagents
-        if (caught(jj)==0)
-            delete(hr_vec(jj));
-        else
-            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), 100, 'g', 'filled');
-        end
-    end
-    
-end
-
-pause(1);
-
-for i = 1:size(hline_vec,2)
-    delete(hline_vec(i));
-end
-
-fprintf(1, '\nRESULT FOR DELIVERY:\n');
-fprintf('\tGoals Completed : [');fprintf('%g ', caught);fprintf(']\n');
+fprintf(1, '\nRESULT FOR PICKUP & DELIVERY:\n');
+fprintf('\tGoals Completed : [');fprintf('%g ', delivered);fprintf(']\n');
 fprintf('\tTime Taken : %d\n', time);
 fprintf('\tMoves Made : [');fprintf('%g ', numofmoves);fprintf(']\n');
 fprintf('\tPath Cost : [');fprintf('%g ', pathcost);fprintf(']\n');

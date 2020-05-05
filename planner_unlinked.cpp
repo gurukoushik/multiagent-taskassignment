@@ -1,7 +1,7 @@
 
 /*=================================================================
  *
- * pm.cpp
+ * planner_unlinked.cpp
  *
  *=================================================================*/
 
@@ -10,6 +10,7 @@
 #include <math.h>
 #include <mex.h>
 #include <cstdio>
+#include <time.h>  
 
 #include <algorithm>
 #include <limits>
@@ -38,6 +39,7 @@ using namespace std;
 /* Output Arguments */
 #define	ACTION_OUT              plhs[0]
 #define	ASSIGN                  plhs[1]
+
 /* access to the map is shifted to account for 0-based indexing in the map,
 whereas 1-based indexing in matlab (so, robotpose and goalpose are 1-indexed) */
 #define GETMAPINDEX(X, Y, XSIZE, YSIZE) ((Y-1)*XSIZE + (X-1))
@@ -50,13 +52,6 @@ whereas 1-based indexing in matlab (so, robotpose and goalpose are 1-indexed) */
 #if !defined(MIN)
 #define	MIN(A, B)	((A) < (B) ? (A) : (B))
 #endif
-
-/* Number of directions possible to move along */
-// #define numOfDirs 9
-
-// 9-Connected Grid
-// int dX[numOfDirs] = {-1, -1, -1,  0,  0,  1, 1, 1, 0};
-// int dY[numOfDirs] = {-1,  0,  1, -1,  1, -1, 0, 1, 0};
 
 class Node {
 private:
@@ -121,12 +116,19 @@ bool check_conflict(Node node, int numofagents, tuple<int,  Point, int> &conflic
                     return 0;
                 }
                 if (k > 0) {
-                    if ((agent1[k].x_pos - agent2[k].x_pos + agent1[k].y_pos - agent2[k].y_pos) + (agent1[k - 1].x_pos - agent2[k - 1].x_pos + agent1[k - 1].y_pos - agent2[k - 1].y_pos) == 0) {
+                    if ((agent1[k].x_pos - agent2[k].x_pos)==0 && (agent1[k].y_pos - agent2[k].y_pos) == 0 && (agent1[k - 1].x_pos - agent2[k - 1].x_pos) == 0 && (agent1[k - 1].y_pos - agent2[k - 1].y_pos) == 0) 
+                    {
                         conflict1 = make_tuple(i, agent1[k], k);
                         conflict2 = make_tuple(j, agent2[k], k);
                         return 0;
                     }
-
+                    if (((agent1[k].x_pos + agent1[k-1].x_pos) / 2 == (agent2[k].x_pos + agent2[k - 1].x_pos) / 2 ) &&
+                        ((agent1[k].y_pos + agent1[k - 1].y_pos) / 2 == (agent2[k].y_pos + agent2[k - 1].y_pos) / 2)){
+                        conflict1 = make_tuple(i, agent1[k], k);
+                        conflict2 = make_tuple(j, agent2[k], k);
+                        return 0;
+                        
+                    }
                 }
 
             }
@@ -177,7 +179,7 @@ vector<Point> Guru_to_Roshan(double* pos, int numofagents) {
 
 
 void print_solutions(Node start_node, int numofagents) {
-    printf("Solutions after search:");
+    
     for (int i = 0; i < numofagents; i++) {
         printf("\n Agent  %d:   ", i);
         vector<Path> paths = (start_node.get_solution());
@@ -231,6 +233,7 @@ void lengthen_solution(vector<Path> &y, int numofagents) {
         
     }
     for (int i = 0; i < numofagents; i++) {
+
         int m = y[i].pathVect.size();
         Point last = y[i].pathVect[m - 1];
         while (y[i].pathVect.size() < j) {
@@ -259,7 +262,7 @@ static void planner(
 
        
     int goals_reached = 0;
-
+    clock_t start = clock();
     if (curr_time == 0) {
         cout << endl;
         
@@ -299,12 +302,12 @@ static void planner(
         vector<Path> s = unconstrainedSearch(gridmap, starts, assignmentVectstart, goals, x_size, y_size);
         lengthen_solution(s, numofagents);
         start_node.set_solution(s);
-        print_solutions(start_node, numofagents);
+        //print_solutions(start_node, numofagents);
         start_node.set_cost(get_SIC(start_node, numofagents));
         OPEN.push(start_node);
         
        
-              
+        final_node = start_node;
 
        
        
@@ -324,10 +327,12 @@ static void planner(
             if (no_conflict) {
                 goals_reached = 1;
                 final_node = curr;
+                clock_t t = clock() - start;
+                printf("\nTIME taken  %f seconds.\n", ((float)t) / CLOCKS_PER_SEC);
                 printf("\nFINAL COST is %f \n", final_node.get_cost());
                 printf("This is the final solution:\n");
                 print_solutions(final_node, numofagents);
-                printf("\n goals reached\n");
+                //printf("\n goals reached\n");
                 break;
             }
             
@@ -417,7 +422,8 @@ static void planner(
             }
             lengthen_solution(x, numofagents);
             child_node1.set_solution(x);
-           
+            //print_solutions(child_node1, numofagents);
+            
             child_node1.set_cost(get_SIC(child_node1, numofagents));
             OPEN.push(child_node1);
             

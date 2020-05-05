@@ -189,9 +189,20 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmapIn, const Point
 	priority_queue <Node_time*, vector<Node_time*>, CompareF_time> open_set;
 	open_set.push(rob_start);
 
-	// printf("before entering while\n");
+	// find largest constraint time
+	int time_max = 0;
+	// numeric_limits<double>::infinity();
+	for(auto i_time : tempConstr){
+
+		if(time_max < get<2>(i_time) ){
+			
+			time_max = get<2>(i_time);
+		}
+	}
+
 	// start while loop for A* expansion
-	while (!open_set.empty() && !(open_set.top()->getPoint() == goalsIn[robotIndex])) {
+	while (!open_set.empty() && 
+		!((open_set.top()->getPoint() == goalsIn[robotIndex]) &&  open_set.top()->getTime() >= time_max  ) ) {
 
 		Node_time* tempPtr = open_set.top();
 
@@ -307,10 +318,30 @@ bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int ne
 	return true;
 }
 
-double diagonalCost(int dir){
+// double diagonalCost(int dir){
+// 
+// 	if(numOfDirs==5){
+// 
+// 		return 0.0;
+// 	}
+// 	else{
+// 
+// 		if (dir == 0 || dir == 2 || dir == 5 || dir == 7)
+// 			return 0.4;
+// 		else
+// 			return 0.0;	
+// 	}
+// 	
+// }
+
+
+double diagonalCost(int dir)
+{
 
 	if (dir == 0 || dir == 2 || dir == 5 || dir == 7)
-		return 0.4;
+		return 1.4;
+    else if (dir == 1 || dir == 3 || dir == 4 || dir == 6)
+        return 1;
 	else
 		return 0.0;
 }

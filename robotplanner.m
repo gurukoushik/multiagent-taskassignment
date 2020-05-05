@@ -1,6 +1,5 @@
-function [action,assign] = robotplanner(numofagents, numofgoals, map_dim, collision_thresh, robotpose, goalpose, map, curr_time)
+function [action,assign_pickup, assign_delivery] = robotplanner(numofagents, numofpickup, map_dim, collision_thresh, robotpose, pickuppose, map, curr_time, deliverypose, numofdelivery)
 
-
-[action,assign] = planner_unlinked(numofagents, numofgoals, map_dim, collision_thresh, robotpose, goalpose, map, curr_time);
+[action,assign_pickup, assign_delivery] = planner_oneshot(numofagents, numofpickup, map_dim, collision_thresh, robotpose, pickuppose, map, curr_time, deliverypose, numofdelivery);
 
 end
