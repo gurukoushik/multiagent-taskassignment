@@ -168,8 +168,11 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	const Point& pickupGoalIn, 
 	const Point& deliveryGoalIn, 
 	const vector<tuple<int, Point, int> >& tempConstr,
-	int x_size, int y_size, double* map, int collision_thresh){
+	int x_size, int y_size, double* map, int collision_thresh,
+    bool time_exceeded){
 
+    clock_t start_time = clock();
+    
 	printf("\n entering constrainedSearch \n");
 	// int numofagents = robotPosnsIn.size();
 	Path tempPathConst;
@@ -214,7 +217,8 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	// start while loop for A* expansion
 	while (!open_set.empty() && 
 		!((open_set.top()->getPoint() == deliveryGoalIn) && open_set.top()->getVisited() &&
-			open_set.top()->getTime() >= time_max  ) ) {
+			open_set.top()->getTime() >= time_max  ) ) 
+    {
 
 		Node_time* tempPtr = open_set.top();
 
@@ -259,6 +263,12 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 				open_set.push(newNode);
 			}
 		}
+        clock_t t = clock() - start_time;
+        if (((float)t) / CLOCKS_PER_SEC > 30)
+        {
+            time_exceeded = true;
+            return tempPathConst;
+        }
 	}
 
 	// start backtracking

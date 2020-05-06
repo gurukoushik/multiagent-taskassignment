@@ -270,6 +270,8 @@ void lengthen_solution(vector<Path> &y, int numofagents)
     }
 }
 
+int delivery_reached = 0;
+
 // Main planner code
 static void planner(
         int numofagents,
@@ -289,8 +291,7 @@ static void planner(
         )
 {   
     // Flag to see if end goal is reached   
-    int delivery_reached = 0;
-    
+    bool time_exceeded = false;
     // Clock variable to keep track of time taken by planner
     clock_t start_time = clock();
     
@@ -362,8 +363,10 @@ static void planner(
         // This is set to show the unconstrained search work for the oneshot planning case
         final_node = start_node;
         
+        int cnt = 0;
         while (!OPEN.empty()) 
         {
+            
             Node curr = OPEN.top(); // set the current node as the top of the OPEN list
             OPEN.pop(); // pop the top node
             
@@ -406,23 +409,32 @@ static void planner(
             
             vector<Path> x;
             vector<tuple<int, Point, int>> cd1_constraints = child_node1.get_constraints();
-            for (int i = 0; i < numofagents; i++) {
-                vector<tuple<int, Point, int>> constraints_per_agent;
-                for (int j = 0; j < cd1_constraints.size(); j++){
-                    if (i == get<0>(cd1_constraints[j])) {
-                        constraints_per_agent.push_back(cd1_constraints[j]);
+            for (int i = 0; i < numofagents; i++) 
+            {
+                if (time_exceeded == false)
+                {
+                    vector<tuple<int, Point, int>> constraints_per_agent;
+                    for (int j = 0; j < cd1_constraints.size(); j++){
+                        if (i == get<0>(cd1_constraints[j])) {
+                            constraints_per_agent.push_back(cd1_constraints[j]);
+                        }
+                    }
+                    if (constraints_per_agent.empty()) {
+                        x.push_back(curr.get_solution()[i]);
+                    }
+                    else {
+                        x.push_back(constrainedSearch( gridmap_pickup, gridmap_delivery, starts[i], i, assignmentVectpickup, 
+                            assignmentVectdelivery, pickup[assignmentVectpickup[i]], delivery[assignmentVectdelivery[i]], 
+                            constraints_per_agent, x_size, y_size, map, collision_thresh, time_exceeded));
                     }
                 }
-                if (constraints_per_agent.empty()) {
-                    x.push_back(curr.get_solution()[i]);
-                }
-                else {
-                    x.push_back(constrainedSearch( gridmap_pickup, gridmap_delivery, starts[i], i, assignmentVectpickup, 
-                        assignmentVectdelivery, pickup[assignmentVectpickup[i]], delivery[assignmentVectdelivery[i]], 
-                        constraints_per_agent, x_size, y_size, map, collision_thresh) );
-                        // gridmap, starts[i], i, assignmentVect, goals_child, constraints_per_agent, x_size, y_size, map, collision_thresh));
-                }
             }
+            
+            if (time_exceeded == true)
+            {
+                break;
+            }
+            
             lengthen_solution(x, numofagents);
             child_node1.set_solution(x);
             child_node1.set_cost(get_SIC(child_node1, numofagents));
@@ -442,30 +454,44 @@ static void planner(
 
             vector<Path> y;
             vector<tuple<int, Point, int>> cd2_constraints = child_node2.get_constraints();
-            for (int i = 0; i < numofagents; i++) {
-                vector<tuple<int, Point, int>> constraints_per_agent;
-                for (int j = 0; j < cd2_constraints.size(); j++) {
-                    if (i == get<0>(cd2_constraints[j])) {
-                        constraints_per_agent.push_back(cd2_constraints[j]);
+            for (int i = 0; i < numofagents; i++) 
+            {
+                if (time_exceeded == false)
+                {
+                    vector<tuple<int, Point, int>> constraints_per_agent;
+                    for (int j = 0; j < cd2_constraints.size(); j++) {
+                        if (i == get<0>(cd2_constraints[j])) {
+                            constraints_per_agent.push_back(cd2_constraints[j]);
+                        }
+                    }
+                    if (constraints_per_agent.empty()) {
+                        y.push_back(curr.get_solution()[i]);
+                    }
+                    else {
+                        y.push_back(constrainedSearch( gridmap_pickup, gridmap_delivery, starts[i], i, assignmentVectpickup, 
+                            assignmentVectdelivery, pickup[assignmentVectpickup[i]], delivery[assignmentVectdelivery[i]], 
+                            constraints_per_agent, x_size, y_size, map, collision_thresh, time_exceeded) );
                     }
                 }
-                if (constraints_per_agent.empty()) {
-                    y.push_back(curr.get_solution()[i]);
-                }
-                else {
-                    y.push_back(constrainedSearch( gridmap_pickup, gridmap_delivery, starts[i], i, assignmentVectpickup, 
-                        assignmentVectdelivery, pickup[assignmentVectpickup[i]], delivery[assignmentVectdelivery[i]], 
-                        constraints_per_agent, x_size, y_size, map, collision_thresh) );
-                    // y.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, 
-                      //   constraints_per_agent, x_size, y_size, map, collision_thresh));
-
-                }
             }
+            
+            if (time_exceeded == true)
+            {
+                break;
+            }
+            
             lengthen_solution(y, numofagents);
             child_node2.set_solution(y);      
             child_node2.set_cost(get_SIC(child_node2, numofagents));
             OPEN.push(child_node2);
             // print_solutions(child_node2, numofagents);
+
+            clock_t t = clock() - start_time;
+            if (((float)t) / CLOCKS_PER_SEC > 30)
+            {
+                break;
+            }
+            
         }   
     }
 
@@ -476,28 +502,37 @@ static void planner(
     for (int i = 0; i < numofagents; i++)
     {
         assign_pickup[i] = assg[i];
+        //mexPrintf("%f\n",assign_pickup[i]);
     }
     // Set the assignment vector for the delivery
     vector<int> assg_d = final_node.get_assignmentvect_d();
     for (int i = 0; i < numofagents; i++)
     {
         assign_delivery[i] = assg_d[i];
+        //mexPrintf("%f\n",assign_delivery[i]);
     }
     
     // Set delivery point reached (only if the constrained search is not being run) 
-    delivery_reached = 1;
+    // delivery_reached = 1;
+    
+    if (delivery_reached == 0)
+       mexPrintf("\n\n TIME EXCEEDED. SOLUTION NOT FOUND \n\n");
+    
+    // print_solutions(final_node, numofagents);
     
     // If delivery is reached, then set action ptr to the planned action 
-    if (delivery_reached) 
+    if (delivery_reached == 1)
     {
+        // mexPrintf("\nGGGGGG %d\n",curr_time);
         for (int i = 0; i < numofagents; i++) 
         {
             vector<Point> sol = set_of_sol[i].pathVect;
             action_ptr[i] = sol[curr_time].x_pos;
             action_ptr[i + numofagents] = sol[curr_time].y_pos;
-            
+            //mexPrintf("%f %f\n",action_ptr[i], action_ptr[i + numofagents]);
         }   
     }
+    
 }
 
 // prhs contains input parameters (4):

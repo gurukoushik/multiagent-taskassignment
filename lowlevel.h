@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stack>
+#include <time.h>
 #include "param.h"
 
 using namespace std;
@@ -149,7 +150,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	const Point& pickupGoalIn, 
 	const Point& deliveryGoalIn, 
 	const vector<tuple<int, Point, int> >& tempConstr,
-	int x_size, int y_size, double* map, int collision_thresh);
+	int x_size, int y_size, double* map, int collision_thresh, bool time_exceeded);
 
 unsigned long long GetIndex(int x, int y, int t, bool visited);
 

@@ -12,12 +12,17 @@ figure('units','normalized','outerposition',[0 0 1 1]);
 ccc = gray;
 ccc = flipud(ccc);
 colormap(ccc);
-imagesc(envmap'); axis square; colorbar; hold on;
+imagesc(envmap'); axis square; hold on;
 
 plotsize1 = 800;
 plotsize2 = 300;
 plotsize3 = 100;
 
+col_arr = zeros(numofagents,3);
+for cc = 1:numofagents
+    col_arr(cc,:) = [rand(),0.7,1];
+end
+col_arr = hsv2rgb(col_arr);
 %% Pickup Simulation
 % Starting Positions of the Robot and Pickup Location
 time = 0;
@@ -37,7 +42,7 @@ for ii = 1:numofagents
     if (hr ~= -1)
         delete(hr);
     end
-    hr = scatter(robotpos(ii,1), robotpos(ii,2), plotsize1, [1,0.2,0.2], 'Filled', 'square');
+    %hr = scatter(robotpos(ii,1), robotpos(ii,2), plotsize1, [1,0.2,0.2], 'Filled', 'square');
     hr = text(robotpos(ii,1), robotpos(ii,2), 'S', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
 % Draw the agent's pickup positions
@@ -46,7 +51,7 @@ for ii = 1:numofgoals
     if (ht ~= -1)
         delete(ht);
     end
-    ht = scatter(goalpos(ii,1), goalpos(ii,2), plotsize1, [0,0.5,1], 'Filled', 'square');
+    ht = scatter(goalpos(ii,1), goalpos(ii,2), plotsize1, [0.8,0.8,0.8], 'Filled', 'square');
     ht = text(goalpos(ii,1), goalpos(ii,2), 'P', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
 % Draw the agent's delivery positions
@@ -55,8 +60,8 @@ for ii = 1:numofgoals
     if (hd ~= -1)
         delete(hd);
     end
-    hd = scatter(delpos(ii,1), delpos(ii,2), plotsize1, [0,0.8,0.4], 'Filled', 'square');
-    hd = text(delpos(ii,1), delpos(ii,2), 'D', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
+    hd = scatter(delpos(ii,1), delpos(ii,2), plotsize1, [0.8,0.8,0.8], 'square');
+    % hd = text(delpos(ii,1), delpos(ii,2), 'D', 'Color', 'w', 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
 % 
 pause(1.0);
@@ -139,12 +144,15 @@ while (~all(delivered) || ~all(picked))
         end
         
         % Plot the robot position and the trajectory
-%         h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'black--');
-        if picked(ii) == 1
-            hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize2, [1,0.6,0.2], 'filled');
-            hr_vec_pick(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize3, 'y', 'filled');
+        % h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'black--');
+        if picked(ii) == 0
+%             h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'black--');
+            hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize2, col_arr(ii,:), 'filled');
+            hr_vec_pick(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize3, 'w', 'filled');
         else
-            hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize2, [1,0.6,0.2], 'filled');
+            h_line = plot([prev_robotpos(ii,1),robotpos(ii,1)],[prev_robotpos(ii,2),robotpos(ii,2)],'black--');
+            hr_vec_pick(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize3, 'y', 'filled');
+            hr_vec(ii) = scatter(robotpos(ii,1), robotpos(ii,2), plotsize2, col_arr(ii,:), 'filled');
         end
 %         hline_vec = [hline_vec; h_line];
         
@@ -164,6 +172,7 @@ while (~all(delivered) || ~all(picked))
     % Delete the agent position plot after every iteration
     for jj = 1:numofagents
         delete(hr_vec(jj));
+        delete(hr_vec_pick(jj));
         if picked(jj) == 1
             %delete(hr_vec_pick(jj));
         end
@@ -172,14 +181,16 @@ while (~all(delivered) || ~all(picked))
     
     for jj = 1:numofagents
         if ((abs(robotpos(jj,1)-goalpos(assign_pickup(jj)+1,1)) <= thresh && abs(robotpos(jj,2)-goalpos(assign_pickup(jj)+1,2)) <= thresh))
-            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize3, 'y', 'filled');
+            hr = scatter(robotpos(jj,1), robotpos(jj,2), plotsize1*0.85, 'w', 'Filled', 'square');
+            %hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize3, 'y', 'filled');
         end
     end
     
     for jj = 1:numofagents
         if ((abs(robotpos(jj,1)-delpos(assign_delivery(assign_pickup(jj)+1)+1,1)) <= thresh && abs(robotpos(jj,2)-delpos(assign_delivery(assign_pickup(jj)+1)+1,2)) <= thresh))
-            hr_vec_pick(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize2, [1,0.6,0.2], 'filled');
-            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize3, 'w', 'filled');
+            hr = scatter(robotpos(jj,1), robotpos(jj,2), plotsize1*0.85, [0.8,0.8,0.8], 'Filled', 'square');
+            hr_vec_pick(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize2, col_arr(jj,:), 'filled');
+            hr_vec(jj) = scatter(robotpos(jj,1), robotpos(jj,2), plotsize3, col_arr(jj,:), 'filled');
         end
     end
     
