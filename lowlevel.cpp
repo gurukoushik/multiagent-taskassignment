@@ -25,7 +25,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 		}
 	}
 
-	printf("map populated\n");
+	// printf("map populated\n");
 
 	int numGoals = goals.size();
 	for (int i = 0; i < numGoals; i++) {
@@ -41,7 +41,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 
 		// start state
 		gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1].setH(i, 0.0);
-		printf("h value at goal %d is %lf\n", i, gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1].getH()[i]);
+		// printf("h value at goal %d is %lf\n", i, gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1].getH()[i]);
 		priority_queue <State_map, vector<State_map>, CompareF_map> open_set_map;
 		open_set_map.push(gridmapIn[goals[i].y_pos - 1][goals[i].x_pos - 1]);
 
@@ -69,8 +69,8 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 						(!gridmapIn[newy - 1][newx - 1].isExpanded()))  //if free
 					{
 
-						printf("gridmapIn LHS = %lf, RHS = %lf\n", gridmapIn[newy - 1][newx - 1].getH()[i],
-							h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]+diagonalCost(dir));
+						// printf("gridmapIn LHS = %lf, RHS = %lf\n", gridmapIn[newy - 1][newx - 1].getH()[i],
+						// 	h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)]+diagonalCost(dir));
 
 						if ( gridmapIn[newy - 1][newx - 1].getH()[i] > 
 							 h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir) ) {
@@ -78,7 +78,7 @@ void backDijkstra(vector<vector<State_map> >& gridmapIn, const vector<Point>& go
 							gridmapIn[newy - 1][newx - 1].setH(i, 
 								h_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir) );
 							open_set_map.push(gridmapIn[newy - 1][newx - 1]);
-							printf("Pushed to open_set_map \n");
+							// printf("Pushed to open_set_map \n");
 						}
 					}
 				}
@@ -114,12 +114,12 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 		stack<State_map> optPath;
 		Path tempPath;
 
-		printf("\n before pushing to optPath \n");
+		// printf("\n before pushing to optPath \n");
 
 		optPath.push(gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1]);
 		tempPath.pathVect.push_back(gridmapIn[robotPosnsIn[i].y_pos - 1][robotPosnsIn[i].x_pos - 1].getPoint());
 
-		printf("\n before entering while loop \n");
+		// printf("\n before entering while loop \n");
 
 		while (!optPath.empty() && 
 			!(optPath.top().getPoint() == gridmapIn[goalsIn[goalIdx].y_pos - 1][goalsIn[goalIdx].x_pos - 1].getPoint()) ){
@@ -154,7 +154,7 @@ vector<Path> unconstrainedSearch(const vector< vector<State_map> >& gridmapIn, c
 		outPaths.push_back(tempPath);
 	}	
 
-	printf("exit unconstrainedSearch\n");
+	// printf("exit unconstrainedSearch\n");
 	return outPaths;
 }
 
@@ -165,8 +165,8 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	int robotIndex,
 	const vector<int>& assignmentPickup,
 	const vector<int>& assignmentDelivery,
-	const vector<Point>& pickupGoalIn, 
-	const vector<Point>& deliveryGoalIn, 
+	const Point& pickupGoalIn, 
+	const Point& deliveryGoalIn, 
 	const vector<tuple<int, Point, int> >& tempConstr,
 	int x_size, int y_size, double* map, int collision_thresh){
 
@@ -181,10 +181,10 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	int x_temp = robotposeX; int y_temp = robotposeY; int t_temp = curr_time;
 	int pickupGoalIdx = assignmentPickup[robotIndex], deliveryGoalIdx = assignmentDelivery[robotIndex];
 
-	if (pickupGoalIdx >= pickupGoalIn.size() || deliveryGoalIdx >= deliveryGoalIn.size()) {
+	// if (pickupGoalIdx >= pickupGoalIn.size() || deliveryGoalIdx >= deliveryGoalIn.size()) {
 
-		printf("goalidx is greater than no of goals\n");
-	}
+	// 	printf("goalidx is greater than no of goals\n");
+	// }
 
 	// set up hash table
 	unordered_set<unsigned long long> closed_set;
@@ -193,7 +193,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	Node_time* rob_start = new Node_time;
 	rob_start->setX(robotposeX); rob_start->setY(robotposeY); rob_start->setT(curr_time);
 	rob_start->setG(0.0);
-	rob_start->calcH( gridmap_pickupIn, gridmap_deliveryIn, pickupGoalIn[robotIndex], pickupGoalIdx, deliveryGoalIdx );
+	rob_start->calcH( gridmap_pickupIn, gridmap_deliveryIn, pickupGoalIn, pickupGoalIdx, deliveryGoalIdx );
 	// rob_start->setH(gridmapIn[robotposeY - 1][robotposeX - 1].getH()[goalIdx]);
 
 
@@ -213,7 +213,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 
 	// start while loop for A* expansion
 	while (!open_set.empty() && 
-		!((open_set.top()->getPoint() == deliveryGoalIn[robotIndex]) && open_set.top()->getVisited() &&
+		!((open_set.top()->getPoint() == deliveryGoalIn) && open_set.top()->getVisited() &&
 			open_set.top()->getTime() >= time_max  ) ) {
 
 		Node_time* tempPtr = open_set.top();
@@ -223,14 +223,15 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 		double g_temp = tempPtr->getG();
 		bool prevVisited = tempPtr->getVisited();
 		tempPtr->expand();
-		closed_set.insert(GetIndex(x_temp, y_temp, t_temp));
+		closed_set.insert(GetIndex(x_temp, y_temp, t_temp, prevVisited));
+
 		open_set.pop();
 
 		for (int dir = 0; dir < numOfDirs; dir++) {
 
 			int newx = x_temp + dX[dir], newy = y_temp + dY[dir];
 			int newt = t_temp + 1;
-			unsigned long long index_temp = GetIndex(newx, newy, newt);
+			unsigned long long index_temp = GetIndex(newx, newy, newt, prevVisited);
 
 			if (newx >= 1 && newx <= x_size && newy >= 1 && newy <= y_size &&
 				((int)map[GETMAPINDEX(newx, newy, x_size, y_size)] >= 0) &&
@@ -242,7 +243,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 				Node_time* newNode = new Node_time;
 				newNode->setX(newx); newNode->setY(newy); newNode->setT(newt);
 
-				if(!prevVisited && newNode->getPoint() == pickupGoalIn[robotIndex]){
+				if(!prevVisited && newNode->getPoint() == pickupGoalIn){
 					newNode->setVisited(true);
 				}
 				else{
@@ -250,8 +251,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 				}
 
 				newNode->setG(g_temp + (int)map[GETMAPINDEX(newx, newy, x_size, y_size)] + diagonalCost(dir));
-				newNode->calcH(gridmap_pickupIn, gridmap_deliveryIn, pickupGoalIn[robotIndex], pickupGoalIdx, 
-					deliveryGoalIdx);
+				newNode->calcH(gridmap_pickupIn, gridmap_deliveryIn, pickupGoalIn, pickupGoalIdx, deliveryGoalIdx);
 				// newNode->setH(gridmapIn[newy - 1][newx - 1].getH()[goalIdx]);
 
 				newNode->setParent(tempPtr);
@@ -278,7 +278,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 
 			int x_back = traverse->getPoint().x_pos, y_back = traverse->getPoint().y_pos, t_back = traverse->getTime();
 			Point point_back(traverse->getPoint().x_pos, traverse->getPoint().y_pos);
-			printf("state while backtracking is %d %d %d \n", x_back, y_back, t_back);
+			// printf("state while backtracking is %d %d %d \n", x_back, y_back, t_back);
 
 			traverse = traverse->getParent();
 
@@ -287,6 +287,10 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 		backtrack.push_back(robotPosnIn);
 		std::reverse(backtrack.begin(), backtrack.end());
 		tempPathConst.pathVect = backtrack;
+	}
+	else{
+
+		printf("open_set empty\n");
 	}
 
 	while(!open_set.empty()){
@@ -307,7 +311,7 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 
 
 // helper functions
-unsigned long long GetIndex(int x, int y, int t) {
+unsigned long long GetIndex(int x, int y, int t, bool visited) {
 
 	// int x = position.x_pos; int y = position.y_pos; int t = time;
 
@@ -316,7 +320,10 @@ unsigned long long GetIndex(int x, int y, int t) {
 	// return ( (double) ((x + y) * (x + y + 1.0)/2.0 + y + t)*((x + y) 
 	// 	* (double)(x + y + 1.0)/2.0 + y + t + 1.0) )/2.0 + t;
 
-	return floor(1000000 * (sqrt(2) * x + sqrt(5) * y + sqrt(11) * t));
+	if(visited)
+		return floor(1000000 * (sqrt(2) * x + sqrt(5) * y + sqrt(11) * t));
+	else
+		return floor(1000000 * (sqrt(3) * x + sqrt(5) * y + sqrt(11) * t));
 }
 
 // CBS constraint

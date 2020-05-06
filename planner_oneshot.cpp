@@ -418,7 +418,8 @@ static void planner(
                 }
                 else {
                     x.push_back(constrainedSearch( gridmap_pickup, gridmap_delivery, starts[i], i, assignmentVectpickup, 
-                        assignmentVectdelivery, pickup, delivery, constraints_per_agent, x_size, y_size, map, collision_thresh) );
+                        assignmentVectdelivery, pickup[assignmentVectpickup[i]], delivery[assignmentVectdelivery[i]], 
+                        constraints_per_agent, x_size, y_size, map, collision_thresh) );
                         // gridmap, starts[i], i, assignmentVect, goals_child, constraints_per_agent, x_size, y_size, map, collision_thresh));
                 }
             }
@@ -453,7 +454,8 @@ static void planner(
                 }
                 else {
                     y.push_back(constrainedSearch( gridmap_pickup, gridmap_delivery, starts[i], i, assignmentVectpickup, 
-                        assignmentVectdelivery, pickup, delivery, constraints_per_agent, x_size, y_size, map, collision_thresh) );
+                        assignmentVectdelivery, pickup[assignmentVectpickup[i]], delivery[assignmentVectdelivery[i]], 
+                        constraints_per_agent, x_size, y_size, map, collision_thresh) );
                     // y.push_back(constrainedSearch(gridmap, starts[i], i, assignmentVect, goals_child, 
                       //   constraints_per_agent, x_size, y_size, map, collision_thresh));
 

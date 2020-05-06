@@ -129,7 +129,7 @@ struct CompareF_time {
 	bool operator()(Node_time* const& s1, Node_time* const& s2) {
 		// return "true" if "p1" is ordered before "p2", for example:
 		long eps = 1;
-		return eps * s1->getH() + s1->getG() > eps * s2->getH() + s1->getG();
+		return eps * s1->getH() + s1->getG() > eps * s2->getH() + s2->getG();
 	}
 };
 
@@ -146,12 +146,12 @@ Path constrainedSearch(const vector< vector<State_map> >& gridmap_pickupIn,
 	int robotIndex,
 	const vector<int>& assignmentPickup,
 	const vector<int>& assignmentDelivery,
-	const vector<Point>& pickupGoalIn, 
-	const vector<Point>& deliveryGoalIn, 
+	const Point& pickupGoalIn, 
+	const Point& deliveryGoalIn, 
 	const vector<tuple<int, Point, int> >& tempConstr,
 	int x_size, int y_size, double* map, int collision_thresh);
 
-unsigned long long GetIndex(int x, int y, int t);
+unsigned long long GetIndex(int x, int y, int t, bool visited);
 
 bool CBSOkay(const vector<tuple<int, Point, int> >& tempConstr, int newx, int newy, int newt, int i_agent);
 
